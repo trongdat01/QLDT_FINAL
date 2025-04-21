@@ -611,6 +611,734 @@ router.get('/admin/update-registration-table', async (req, res) => {
     }
 });
 
+// ==================== ROUTES QUẢN LÝ LỊCH HỌC ====================
+
+// Create lichhoc table if it doesn't exist
+router.get('/admin/create-lichhoc-table', async (req, res) => {
+    try {
+        if (!req.session.user || req.session.user.vaitro !== 'admin') {
+            return res.redirect('/taikhoan/dang-nhap?error=Vui lòng đăng nhập với tài khoản admin');
+        }
+
+        // Check if table exists
+        const tableCheck = await sequelize.query(
+            "SHOW TABLES LIKE 'lichhoc'",
+            { type: sequelize.QueryTypes.SELECT }
+        );
+
+        if (tableCheck && tableCheck.length > 0) {
+            return res.send('Bảng lichhoc đã tồn tại. <a href="/taikhoan/admin/lichhoc">Quay lại quản lý lịch học</a>');
+        }
+
+        // Create the table with structure matching the SQL file
+        await sequelize.query(`
+            CREATE TABLE lichhoc (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                mahocphan VARCHAR(20) NOT NULL,
+                namhoc VARCHAR(20) NOT NULL,
+                hocky VARCHAR(20) NOT NULL,
+                giangvien VARCHAR(100) NOT NULL,
+                phonghoclythuyet VARCHAR(50),
+                thu_lythuyet VARCHAR(20),
+                cahoc_lythuyet VARCHAR(50),
+                phonghocthuchanh VARCHAR(50),
+                thu_thuchanh VARCHAR(20),
+                cahoc_thuchanh VARCHAR(50),
+                ngaybatdau DATE NOT NULL,
+                ngayketthuc DATE NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                FOREIGN KEY (mahocphan) REFERENCES dangkyhocphan(mahocphan)
+            )
+        `);
+
+        return res.send('Tạo bảng lichhoc thành công. <a href="/taikhoan/admin/lichhoc">Đến trang quản lý lịch học</a>');
+    } catch (error) {
+        console.error('Lỗi tạo bảng lichhoc:', error);
+        return res.status(500).send('Lỗi: ' + error.message);
+    }
+});
+
+// List all schedules - Admin view
+router.get('/admin/lichhoc', async (req, res) => {
+    try {
+        if (!req.session.user || req.session.user.vaitro !== 'admin') {
+            return res.redirect('/taikhoan/dang-nhap?error=Vui lòng đăng nhập với tài khoản admin');
+        }
+
+        // Check if the lichhoc table exists first
+        const tableCheck = await sequelize.query(
+            "SHOW TABLES LIKE 'lichhoc'",
+            { type: sequelize.QueryTypes.SELECT }
+        );
+
+        let schedules = [];
+        let courses = [];
+        let rooms = [];
+
+        if (tableCheck && tableCheck.length > 0) {
+            // Table exists, proceed with queries
+            try {
+                // Fetch all schedules with course info, getting all fields directly
+                schedules = await sequelize.query(
+                    `SELECT l.*, c.tenhocphan 
+                     FROM lichhoc l
+                     JOIN dangkyhocphan c ON l.mahocphan = c.mahocphan
+                     ORDER BY l.ngaybatdau ASC, l.thu_lythuyet ASC`,
+                    {
+                        type: sequelize.QueryTypes.SELECT
+                    }
+                );
+
+                // Get unique rooms for filter dropdown (both theory and practice rooms)
+                const theoryRooms = await sequelize.query(
+                    'SELECT DISTINCT phonghoclythuyet AS phonghoc FROM lichhoc WHERE phonghoclythuyet IS NOT NULL ORDER BY phonghoclythuyet',
+                    {
+                        type: sequelize.QueryTypes.SELECT
+                    }
+                );
+
+                const practiceRooms = await sequelize.query(
+                    'SELECT DISTINCT phonghocthuchanh AS phonghoc FROM lichhoc WHERE phonghocthuchanh IS NOT NULL ORDER BY phonghocthuchanh',
+                    {
+                        type: sequelize.QueryTypes.SELECT
+                    }
+                );
+
+                // Combine and deduplicate rooms
+                const allRooms = [...theoryRooms, ...practiceRooms];
+                const roomSet = new Set();
+                rooms = allRooms.filter(room => {
+                    if (!room.phonghoc) return false;
+                    if (roomSet.has(room.phonghoc)) return false;
+                    roomSet.add(room.phonghoc);
+                    return true;
+                });
+
+            } catch (queryError) {
+                console.error('Query error:', queryError);
+                // Continue with empty arrays
+            }
+        } else {
+            // Table doesn't exist, we'll show a message in the UI
+            console.log('The lichhoc table does not exist yet');
+        }
+
+        // Fetch all courses for dropdown (this should work even if lichhoc doesn't exist)
+        try {
+            courses = await sequelize.query(
+                'SELECT mahocphan, tenhocphan FROM dangkyhocphan ORDER BY tenhocphan',
+                {
+                    type: sequelize.QueryTypes.SELECT
+                }
+            );
+        } catch (courseError) {
+            console.error('Course query error:', courseError);
+            // Continue with empty array
+        }
+
+        res.render('admin/lichhoc', {
+            title: 'Quản lý Lịch Học',
+            user: req.session.user,
+            schedules: schedules || [],
+            courses: courses || [],
+            rooms: rooms || [],
+            tableExists: tableCheck && tableCheck.length > 0,
+            error: req.query.error,
+            success: req.query.success
+        });
+    } catch (error) {
+        console.error('Lỗi tải danh sách lịch học:', error);
+        res.status(500).render('error', {
+            message: 'Đã xảy ra lỗi khi tải danh sách lịch học',
+            error
+        });
+    }
+});
+
+// Add new schedule
+router.post('/admin/lichhoc/them', async (req, res) => {
+    try {
+        if (!req.session.user || req.session.user.vaitro !== 'admin') {
+            return res.redirect('/taikhoan/dang-nhap?error=Vui lòng đăng nhập với tài khoản admin');
+        }
+
+        const {
+            mahocphan,
+            namhoc,
+            hocky,
+            ngaybatdau,
+            ngayketthuc,
+            giangvien,
+            thu_lythuyet,
+            cahoc_lythuyet,
+            phonghoclythuyet,
+            thu_thuchanh,
+            cahoc_thuchanh,
+            phonghocthuchanh
+        } = req.body;
+
+        // Basic validation
+        if (!mahocphan || !namhoc || !hocky || !ngaybatdau || !ngayketthuc ||
+            !giangvien || !thu_lythuyet || !cahoc_lythuyet || !phonghoclythuyet) {
+            return res.redirect('/taikhoan/admin/lichhoc?error=Vui lòng điền đầy đủ thông tin bắt buộc');
+        }
+
+        // Check for schedule conflicts in the same room for theory class
+        const theoryConflicts = await sequelize.query(
+            `SELECT * FROM lichhoc 
+             WHERE phonghoclythuyet = ? 
+             AND thu_lythuyet = ?
+             AND ngaybatdau <= ? 
+             AND ngayketthuc >= ?
+             AND (
+                 (SUBSTRING_INDEX(cahoc_lythuyet, '-', 1) <= ? AND SUBSTRING_INDEX(cahoc_lythuyet, '-', -1) > ?) OR 
+                 (SUBSTRING_INDEX(cahoc_lythuyet, '-', 1) < ? AND SUBSTRING_INDEX(cahoc_lythuyet, '-', -1) >= ?) OR
+                 (SUBSTRING_INDEX(cahoc_lythuyet, '-', 1) >= ? AND SUBSTRING_INDEX(cahoc_lythuyet, '-', -1) <= ?)
+             )`,
+            {
+                replacements: [
+                    phonghoclythuyet,
+                    thu_lythuyet,
+                    ngayketthuc,
+                    ngaybatdau,
+                    cahoc_lythuyet.split('-')[1], cahoc_lythuyet.split('-')[0],
+                    cahoc_lythuyet.split('-')[0], cahoc_lythuyet.split('-')[1],
+                    cahoc_lythuyet.split('-')[0], cahoc_lythuyet.split('-')[1]
+                ],
+                type: sequelize.QueryTypes.SELECT
+            }
+        );
+
+        if (theoryConflicts && theoryConflicts.length > 0) {
+            return res.redirect('/taikhoan/admin/lichhoc?error=Phòng học lý thuyết đã được sử dụng trong khoảng thời gian này');
+        }
+
+        // Check for conflicts with practice room if practice details are provided
+        if (thu_thuchanh && cahoc_thuchanh && phonghocthuchanh) {
+            const practiceConflicts = await sequelize.query(
+                `SELECT * FROM lichhoc 
+                 WHERE phonghocthuchanh = ? 
+                 AND thu_thuchanh = ?
+                 AND ngaybatdau <= ? 
+                 AND ngayketthuc >= ?
+                 AND (
+                     (SUBSTRING_INDEX(cahoc_thuchanh, '-', 1) <= ? AND SUBSTRING_INDEX(cahoc_thuchanh, '-', -1) > ?) OR 
+                     (SUBSTRING_INDEX(cahoc_thuchanh, '-', 1) < ? AND SUBSTRING_INDEX(cahoc_thuchanh, '-', -1) >= ?) OR
+                     (SUBSTRING_INDEX(cahoc_thuchanh, '-', 1) >= ? AND SUBSTRING_INDEX(cahoc_thuchanh, '-', -1) <= ?)
+                 )`,
+                {
+                    replacements: [
+                        phonghocthuchanh,
+                        thu_thuchanh,
+                        ngayketthuc,
+                        ngaybatdau,
+                        cahoc_thuchanh.split('-')[1], cahoc_thuchanh.split('-')[0],
+                        cahoc_thuchanh.split('-')[0], cahoc_thuchanh.split('-')[1],
+                        cahoc_thuchanh.split('-')[0], cahoc_thuchanh.split('-')[1]
+                    ],
+                    type: sequelize.QueryTypes.SELECT
+                }
+            );
+
+            if (practiceConflicts && practiceConflicts.length > 0) {
+                return res.redirect('/taikhoan/admin/lichhoc?error=Phòng học thực hành đã được sử dụng trong khoảng thời gian này');
+            }
+        }
+
+        // Insert new schedule with all fields from the SQL file structure
+        await sequelize.query(
+            `INSERT INTO lichhoc 
+             (mahocphan, namhoc, hocky, giangvien, 
+              phonghoclythuyet, thu_lythuyet, cahoc_lythuyet, 
+              phonghocthuchanh, thu_thuchanh, cahoc_thuchanh, 
+              ngaybatdau, ngayketthuc) 
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            {
+                replacements: [
+                    mahocphan,
+                    namhoc,
+                    hocky,
+                    giangvien,
+                    phonghoclythuyet,
+                    thu_lythuyet,
+                    cahoc_lythuyet,
+                    phonghocthuchanh || null,
+                    thu_thuchanh || null,
+                    cahoc_thuchanh || null,
+                    ngaybatdau,
+                    ngayketthuc
+                ],
+                type: sequelize.QueryTypes.INSERT
+            }
+        );
+
+        res.redirect('/taikhoan/admin/lichhoc?success=Thêm lịch học thành công');
+    } catch (error) {
+        console.error('Lỗi thêm lịch học:', error);
+        res.redirect('/taikhoan/admin/lichhoc?error=Đã xảy ra lỗi: ' + error.message);
+    }
+});
+
+// Edit schedule
+router.post('/admin/lichhoc/sua', async (req, res) => {
+    try {
+        if (!req.session.user || req.session.user.vaitro !== 'admin') {
+            return res.redirect('/taikhoan/dang-nhap?error=Vui lòng đăng nhập với tài khoản admin');
+        }
+
+        const {
+            id,
+            mahocphan,
+            namhoc,
+            hocky,
+            ngaybatdau,
+            ngayketthuc,
+            giangvien,
+            thu_lythuyet,
+            cahoc_lythuyet,
+            phonghoclythuyet,
+            thu_thuchanh,
+            cahoc_thuchanh,
+            phonghocthuchanh
+        } = req.body;
+
+        // Basic validation
+        if (!id || !mahocphan || !namhoc || !hocky || !ngaybatdau || !ngayketthuc ||
+            !giangvien || !thu_lythuyet || !cahoc_lythuyet || !phonghoclythuyet) {
+            return res.redirect('/taikhoan/admin/lichhoc?error=Vui lòng điền đầy đủ thông tin bắt buộc');
+        }
+
+        // Check for schedule conflicts in the same room for theory class (excluding this schedule)
+        const theoryConflicts = await sequelize.query(
+            `SELECT * FROM lichhoc 
+             WHERE phonghoclythuyet = ? 
+             AND thu_lythuyet = ?
+             AND ngaybatdau <= ? 
+             AND ngayketthuc >= ?
+             AND id != ?
+             AND (
+                 (SUBSTRING_INDEX(cahoc_lythuyet, '-', 1) <= ? AND SUBSTRING_INDEX(cahoc_lythuyet, '-', -1) > ?) OR 
+                 (SUBSTRING_INDEX(cahoc_lythuyet, '-', 1) < ? AND SUBSTRING_INDEX(cahoc_lythuyet, '-', -1) >= ?) OR
+                 (SUBSTRING_INDEX(cahoc_lythuyet, '-', 1) >= ? AND SUBSTRING_INDEX(cahoc_lythuyet, '-', -1) <= ?)
+             )`,
+            {
+                replacements: [
+                    phonghoclythuyet,
+                    thu_lythuyet,
+                    ngayketthuc,
+                    ngaybatdau,
+                    id,
+                    cahoc_lythuyet.split('-')[1], cahoc_lythuyet.split('-')[0],
+                    cahoc_lythuyet.split('-')[0], cahoc_lythuyet.split('-')[1],
+                    cahoc_lythuyet.split('-')[0], cahoc_lythuyet.split('-')[1]
+                ],
+                type: sequelize.QueryTypes.SELECT
+            }
+        );
+
+        if (theoryConflicts && theoryConflicts.length > 0) {
+            return res.redirect('/taikhoan/admin/lichhoc?error=Phòng học lý thuyết đã được sử dụng trong khoảng thời gian này');
+        }
+
+        // Check for conflicts with practice room if practice details are provided
+        if (thu_thuchanh && cahoc_thuchanh && phonghocthuchanh) {
+            const practiceConflicts = await sequelize.query(
+                `SELECT * FROM lichhoc 
+                 WHERE phonghocthuchanh = ? 
+                 AND thu_thuchanh = ?
+                 AND ngaybatdau <= ? 
+                 AND ngayketthuc >= ?
+                 AND id != ?
+                 AND (
+                     (SUBSTRING_INDEX(cahoc_thuchanh, '-', 1) <= ? AND SUBSTRING_INDEX(cahoc_thuchanh, '-', -1) > ?) OR 
+                     (SUBSTRING_INDEX(cahoc_thuchanh, '-', 1) < ? AND SUBSTRING_INDEX(cahoc_thuchanh, '-', -1) >= ?) OR
+                     (SUBSTRING_INDEX(cahoc_thuchanh, '-', 1) >= ? AND SUBSTRING_INDEX(cahoc_thuchanh, '-', -1) <= ?)
+                 )`,
+                {
+                    replacements: [
+                        phonghocthuchanh,
+                        thu_thuchanh,
+                        ngayketthuc,
+                        ngaybatdau,
+                        id,
+                        cahoc_thuchanh.split('-')[1], cahoc_thuchanh.split('-')[0],
+                        cahoc_thuchanh.split('-')[0], cahoc_thuchanh.split('-')[1],
+                        cahoc_thuchanh.split('-')[0], cahoc_thuchanh.split('-')[1]
+                    ],
+                    type: sequelize.QueryTypes.SELECT
+                }
+            );
+
+            if (practiceConflicts && practiceConflicts.length > 0) {
+                return res.redirect('/taikhoan/admin/lichhoc?error=Phòng học thực hành đã được sử dụng trong khoảng thời gian này');
+            }
+        }
+
+        // Update schedule with all fields from the SQL file structure
+        await sequelize.query(
+            `UPDATE lichhoc SET
+             mahocphan = ?,
+             namhoc = ?,
+             hocky = ?,
+             giangvien = ?,
+             phonghoclythuyet = ?,
+             thu_lythuyet = ?,
+             cahoc_lythuyet = ?,
+             phonghocthuchanh = ?,
+             thu_thuchanh = ?,
+             cahoc_thuchanh = ?,
+             ngaybatdau = ?,
+             ngayketthuc = ?,
+             updated_at = CURRENT_TIMESTAMP
+             WHERE id = ?`,
+            {
+                replacements: [
+                    mahocphan,
+                    namhoc,
+                    hocky,
+                    giangvien,
+                    phonghoclythuyet,
+                    thu_lythuyet,
+                    cahoc_lythuyet,
+                    phonghocthuchanh || null,
+                    thu_thuchanh || null,
+                    cahoc_thuchanh || null,
+                    ngaybatdau,
+                    ngayketthuc,
+                    id
+                ],
+                type: sequelize.QueryTypes.UPDATE
+            }
+        );
+
+        res.redirect('/taikhoan/admin/lichhoc?success=Cập nhật lịch học thành công');
+    } catch (error) {
+        console.error('Lỗi cập nhật lịch học:', error);
+        res.redirect('/taikhoan/admin/lichhoc?error=Đã xảy ra lỗi: ' + error.message);
+    }
+});
+
+// Delete schedule route
+router.post('/admin/lichhoc/xoa', async (req, res) => {
+    try {
+        if (!req.session.user || req.session.user.vaitro !== 'admin') {
+            return res.redirect('/taikhoan/dang-nhap?error=Vui lòng đăng nhập với tài khoản admin');
+        }
+
+        const { id } = req.body;
+
+        if (!id) {
+            return res.redirect('/taikhoan/admin/lichhoc?error=ID lịch học không hợp lệ');
+        }
+
+        // Delete the schedule
+        await sequelize.query(
+            'DELETE FROM lichhoc WHERE id = ?',
+            {
+                replacements: [id],
+                type: sequelize.QueryTypes.DELETE
+            }
+        );
+
+        res.redirect('/taikhoan/admin/lichhoc?success=Xóa lịch học thành công');
+    } catch (error) {
+        console.error('Lỗi xóa lịch học:', error);
+        res.redirect('/taikhoan/admin/lichhoc?error=Đã xảy ra lỗi: ' + error.message);
+    }
+});
+
+// Get schedule details (JSON API)
+router.get('/admin/lichhoc/chi-tiet/:id', async (req, res) => {
+    try {
+        if (!req.session.user || req.session.user.vaitro !== 'admin') {
+            return res.status(401).json({ success: false, message: 'Unauthorized' });
+        }
+
+        const { id } = req.params;
+
+        // Fetch schedule with course info and all fields
+        const schedules = await sequelize.query(
+            `SELECT l.*, c.tenhocphan 
+             FROM lichhoc l
+             JOIN dangkyhocphan c ON l.mahocphan = c.mahocphan
+             WHERE l.id = ?`,
+            {
+                replacements: [id],
+                type: sequelize.QueryTypes.SELECT
+            }
+        );
+
+        if (!schedules || schedules.length === 0) {
+            return res.status(404).json({ success: false, message: 'Không tìm thấy lịch học' });
+        }
+
+        // Return the raw data as is, without transforming
+        res.json({ success: true, schedule: schedules[0] });
+    } catch (error) {
+        console.error('Lỗi lấy chi tiết lịch học:', error);
+        res.status(500).json({ success: false, message: 'Đã xảy ra lỗi', error: error.message });
+    }
+});
+
+// View schedules for a specific course
+router.get('/admin/lichhoc/hocphan/:mahocphan', async (req, res) => {
+    try {
+        if (!req.session.user || req.session.user.vaitro !== 'admin') {
+            return res.redirect('/taikhoan/dang-nhap?error=Vui lòng đăng nhập với tài khoản admin');
+        }
+
+        const { mahocphan } = req.params;
+
+        // Get course info
+        const courses = await sequelize.query(
+            'SELECT * FROM dangkyhocphan WHERE mahocphan = ?',
+            {
+                replacements: [mahocphan],
+                type: sequelize.QueryTypes.SELECT
+            }
+        );
+
+        if (!courses || courses.length === 0) {
+            return res.redirect('/taikhoan/admin/lichhoc?error=Không tìm thấy học phần');
+        }
+
+        const course = courses[0];
+
+        // Fetch schedules for this course
+        const schedules = await sequelize.query(
+            `SELECT l.*, c.tenhocphan 
+             FROM lichhoc l
+             JOIN dangkyhocphan c ON l.mahocphan = c.mahocphan
+             WHERE l.mahocphan = ?
+             ORDER BY l.ngaybatdau ASC, l.thu_lythuyet ASC`,
+            {
+                replacements: [mahocphan],
+                type: sequelize.QueryTypes.SELECT
+            }
+        );
+
+        // Transform data from database schema to view model format
+        const mappedSchedules = schedules.map(schedule => ({
+            id: schedule.id,
+            mahocphan: schedule.mahocphan,
+            tenhocphan: schedule.tenhocphan,
+            ngayhoc: schedule.ngaybatdau,
+            giobatdau: schedule.cahoc_lythuyet ? schedule.cahoc_lythuyet.split('-')[0] : '07:00',
+            gioketthuc: schedule.cahoc_lythuyet ? schedule.cahoc_lythuyet.split('-')[1] : '11:00',
+            phonghoc: schedule.phonghoclythuyet || 'Chưa có',
+            giangvien: schedule.giangvien,
+            ghichu: `${schedule.namhoc}, Học kỳ: ${schedule.hocky}, Thứ: ${schedule.thu_lythuyet}, Từ ngày ${new Date(schedule.ngaybatdau).toLocaleDateString('vi-VN')} đến ngày ${new Date(schedule.ngayketthuc).toLocaleDateString('vi-VN')}`
+        }));
+
+        // Fetch all courses for dropdown
+        const allCourses = await sequelize.query(
+            'SELECT mahocphan, tenhocphan FROM dangkyhocphan ORDER BY tenhocphan',
+            {
+                type: sequelize.QueryTypes.SELECT
+            }
+        );
+
+        res.render('admin/lichhoc-course', {
+            title: `Lịch học cho ${course.tenhocphan}`,
+            user: req.session.user,
+            course,
+            schedules: mappedSchedules || [],
+            courses: allCourses || [],
+            error: req.query.error,
+            success: req.query.success
+        });
+    } catch (error) {
+        console.error('Lỗi tải lịch học cho khóa học:', error);
+        res.status(500).render('error', {
+            message: 'Đã xảy ra lỗi khi tải lịch học cho khóa học',
+            error
+        });
+    }
+});
+
+// Filter schedules
+router.get('/admin/lichhoc/loc', async (req, res) => {
+    try {
+        if (!req.session.user || req.session.user.vaitro !== 'admin') {
+            return res.redirect('/taikhoan/dang-nhap?error=Vui lòng đăng nhập với tài khoản admin');
+        }
+
+        const { mahocphan, ngayhoc, phonghoc } = req.query;
+
+        // Build WHERE clause based on filters
+        let whereClause = '';
+        const replacements = [];
+
+        if (mahocphan) {
+            whereClause += ' AND l.mahocphan = ?';
+            replacements.push(mahocphan);
+        }
+
+        if (ngayhoc) {
+            whereClause += ' AND l.ngaybatdau <= ? AND l.ngayketthuc >= ?';
+            replacements.push(ngayhoc, ngayhoc);
+        }
+
+        if (phonghoc) {
+            whereClause += ' AND (l.phonghoclythuyet = ? OR l.phonghocthuchanh = ?)';
+            replacements.push(phonghoc, phonghoc);
+        }
+
+        // Fetch filtered schedules
+        const schedules = await sequelize.query(
+            `SELECT l.*, c.tenhocphan 
+             FROM lichhoc l
+             JOIN dangkyhocphan c ON l.mahocphan = c.mahocphan
+             WHERE 1=1 ${whereClause}
+             ORDER BY l.ngaybatdau ASC, l.thu_lythuyet ASC`,
+            {
+                replacements,
+                type: sequelize.QueryTypes.SELECT
+            }
+        );
+
+        // Transform data from database schema to view model format
+        const mappedSchedules = schedules.map(schedule => ({
+            id: schedule.id,
+            mahocphan: schedule.mahocphan,
+            tenhocphan: schedule.tenhocphan,
+            ngayhoc: schedule.ngaybatdau,
+            giobatdau: schedule.cahoc_lythuyet ? schedule.cahoc_lythuyet.split('-')[0] : '07:00',
+            gioketthuc: schedule.cahoc_lythuyet ? schedule.cahoc_lythuyet.split('-')[1] : '11:00',
+            phonghoc: schedule.phonghoclythuyet || 'Chưa có',
+            giangvien: schedule.giangvien,
+            ghichu: `${schedule.namhoc}, Học kỳ: ${schedule.hocky}, Thứ: ${schedule.thu_lythuyet}, Từ ngày ${new Date(schedule.ngaybatdau).toLocaleDateString('vi-VN')} đến ngày ${new Date(schedule.ngayketthuc).toLocaleDateString('vi-VN')}`
+        }));
+
+        // Fetch all courses for dropdown
+        const courses = await sequelize.query(
+            'SELECT mahocphan, tenhocphan FROM dangkyhocphan ORDER BY tenhocphan',
+            {
+                type: sequelize.QueryTypes.SELECT
+            }
+        );
+
+        // Get unique rooms for filter dropdown
+        const theoryRooms = await sequelize.query(
+            'SELECT DISTINCT phonghoclythuyet AS phonghoc FROM lichhoc WHERE phonghoclythuyet IS NOT NULL ORDER BY phonghoclythuyet',
+            {
+                type: sequelize.QueryTypes.SELECT
+            }
+        );
+
+        const practiceRooms = await sequelize.query(
+            'SELECT DISTINCT phonghocthuchanh AS phonghoc FROM lichhoc WHERE phonghocthuchanh IS NOT NULL ORDER BY phonghocthuchanh',
+            {
+                type: sequelize.QueryTypes.SELECT
+            }
+        );
+
+        // Combine and deduplicate rooms
+        const allRooms = [...theoryRooms, ...practiceRooms];
+        const roomSet = new Set();
+        const rooms = allRooms.filter(room => {
+            if (!room.phonghoc) return false;
+            if (roomSet.has(room.phonghoc)) return false;
+            roomSet.add(room.phonghoc);
+            return true;
+        });
+
+        res.render('admin/lichhoc', {
+            title: 'Quản lý Lịch Học - Kết quả lọc',
+            user: req.session.user,
+            schedules: mappedSchedules || [],
+            courses: courses || [],
+            rooms: rooms || [],
+            filters: { mahocphan, ngayhoc, phonghoc },
+            error: req.query.error,
+            success: req.query.success
+        });
+    } catch (error) {
+        console.error('Lỗi lọc lịch học:', error);
+        res.status(500).render('error', {
+            message: 'Đã xảy ra lỗi khi lọc danh sách lịch học',
+            error
+        });
+    }
+});
+
+// View student's schedules
+router.get('/sinhvien/lichhoc', async (req, res) => {
+    try {
+        if (!req.session.user || req.session.user.vaitro !== 'sinhvien') {
+            return res.redirect('/taikhoan/dang-nhap?error=Vui lòng đăng nhập với tài khoản sinh viên');
+        }
+
+        const msv = req.session.user.id;
+
+        // Get student's registered courses with 'đã đăng ký' status
+        const registeredCourses = await sequelize.query(
+            `SELECT d.mahocphan, c.tenhocphan 
+             FROM dsdangkyhocphan d
+             JOIN dangkyhocphan c ON d.mahocphan = c.mahocphan
+             WHERE d.msv = ? AND d.trangthaidangky = 'đã đăng ký'`,
+            {
+                replacements: [msv],
+                type: sequelize.QueryTypes.SELECT
+            }
+        );
+
+        if (!registeredCourses || registeredCourses.length === 0) {
+            return res.render('sinhvien/lichhoc', {
+                title: 'Lịch Học Của Tôi',
+                user: req.session.user,
+                schedules: [],
+                message: 'Bạn chưa đăng ký học phần nào hoặc các học phần đăng ký chưa được phê duyệt.'
+            });
+        }
+
+        // Get the list of course IDs
+        const courseIds = registeredCourses.map(course => course.mahocphan);
+
+        // Get schedules for these courses
+        const schedules = await sequelize.query(
+            `SELECT l.*, c.tenhocphan 
+             FROM lichhoc l
+             JOIN dangkyhocphan c ON l.mahocphan = c.mahocphan
+             WHERE l.mahocphan IN (?)
+             ORDER BY l.ngaybatdau ASC, l.thu_lythuyet ASC`,
+            {
+                replacements: [courseIds],
+                type: sequelize.QueryTypes.SELECT
+            }
+        );
+
+        // Group schedules by day for easier display
+        const schedulesByDay = {};
+        const weekdays = ['Chủ Nhật', 'Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7'];
+
+        schedules.forEach(schedule => {
+            const dayOfWeek = schedule.thu_lythuyet;
+
+            if (!schedulesByDay[dayOfWeek]) {
+                schedulesByDay[dayOfWeek] = [];
+            }
+            schedulesByDay[dayOfWeek].push(schedule);
+        });
+
+        res.render('sinhvien/lichhoc', {
+            title: 'Lịch Học Của Tôi',
+            user: req.session.user,
+            schedules: schedules || [],
+            schedulesByDay,
+            weekdays,
+            courses: registeredCourses || []
+        });
+    } catch (error) {
+        console.error('Lỗi tải lịch học sinh viên:', error);
+        res.status(500).render('error', {
+            message: 'Đã xảy ra lỗi khi tải lịch học của bạn',
+            error
+        });
+    }
+});
+
 // Admin management page
 router.get('/admin/manage-admins', async (req, res) => {
     try {

@@ -147,35 +147,23 @@ CREATE TABLE vaitro
                 (
                     id INT
                     AUTO_INCREMENT PRIMARY KEY,
-    mahocphan VARCHAR
+                    mahocphan VARCHAR
                     (20) NOT NULL,
-    namhoc VARCHAR
-                    (20) NOT NULL,
-    hocky VARCHAR
-                    (20) NOT NULL,
-    giangvien VARCHAR
-                    (100) NOT NULL,
-    phonghoclythuyet VARCHAR
-                    (50),
-    thu_lythuyet VARCHAR
-                    (20),
-    cahoc_lythuyet VARCHAR
-                    (50),
-    phonghocthuchanh VARCHAR
-                    (50),
-    thu_thuchanh VARCHAR
-                    (20),
-    cahoc_thuchanh VARCHAR
-                    (50),
-    ngaybatdau DATE NOT NULL,
-    ngayketthuc DATE NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON
+                    ngayhoc DATE NOT NULL,
+                    giobatdau TIME NOT NULL,
+                    gioketthuc TIME NOT NULL,
+                    phonghoc VARCHAR
+                    (50) NOT NULL,
+                    giangvien VARCHAR
+                    (100),
+                    ghichu TEXT,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON
                     UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY
+                    FOREIGN KEY
                     (mahocphan) REFERENCES dangkyhocphan
                     (mahocphan)
-);
+                );
 
                     -- Table lichthi
                     CREATE TABLE lichthi
