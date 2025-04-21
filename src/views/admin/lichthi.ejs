@@ -1,0 +1,667 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>
+        <%= title %> | Hệ thống Quản lý Đào tạo
+    </title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.3/font/bootstrap-icons.css">
+
+    <style>
+        .table-responsive {
+            overflow-x: auto;
+        }
+
+        .action-buttons .btn {
+            margin-right: 5px;
+        }
+
+        .card {
+            margin-bottom: 20px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 30px;
+        }
+
+        .filter-row {
+            margin-bottom: 15px;
+        }
+
+        .badge-dalen {
+            background-color: #28a745;
+        }
+
+        .badge-daky {
+            background-color: #17a2b8;
+        }
+
+        .badge-hoanthi {
+            background-color: #dc3545;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Admin Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand" href="/">Hệ thống Quản lý Đào tạo</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/taikhoan/admin/dashboard">Trang chủ</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/taikhoan/admin/manage-admins">Quản lý Admin</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/taikhoan/admin/manage-students">Quản lý Sinh viên</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/taikhoan/admin/manage-courses">Quản lý Học phần</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/taikhoan/admin/lichhoc">Quản lý Lịch Học</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="/taikhoan/admin/lichthi">Quản lý Lịch Thi</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/taikhoan/admin/manage-grades">Quản lý Điểm</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/taikhoan/admin/manage-news">Quản lý Tin tức</a>
+                    </li>
+                </ul>
+                <ul class="navbar-nav">
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button"
+                            data-bs-toggle="dropdown">
+                            <i class="bi bi-person-circle"></i>
+                            <% if (typeof user !=='undefined' ) { %>
+                                <%= user.email %>
+                                    <% } else { %>
+                                        Tài khoản
+                                        <% } %>
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li><a class="dropdown-item" href="/taikhoan/admin/profile">Thông tin cá nhân</a></li>
+                            <li>
+                                <hr class="dropdown-divider">
+                            </li>
+                            <li><a class="dropdown-item" href="/taikhoan/dang-xuat">Đăng xuất</a></li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <h1 class="mb-4">Quản lý Lịch Thi</h1>
+
+        <% if (typeof error !=='undefined' && error) { %>
+            <div class="alert alert-danger alert-dismissible fade show">
+                <%= error %>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+            <% } %>
+
+                <% if (typeof success !=='undefined' && success) { %>
+                    <div class="alert alert-success alert-dismissible fade show">
+                        <%= success %>
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                    <% } %>
+
+                        <div class="row">
+                            <div class="col-md-12">
+                                <div class="card">
+                                    <div class="card-header d-flex justify-content-between align-items-center">
+                                        <h5 class="card-title mb-0">Thêm Lịch Thi Mới</h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <form id="addExamForm" action="/taikhoan/admin/lichthi/them" method="POST"
+                                            class="row g-3">
+                                            <div class="col-md-4">
+                                                <label for="mahocphan" class="form-label">Học Phần</label>
+                                                <select class="form-select" id="mahocphan" name="mahocphan" required>
+                                                    <option value="">Chọn học phần</option>
+                                                    <% if (courses && courses.length> 0) { %>
+                                                        <% courses.forEach(course=> { %>
+                                                            <option value="<%= course.mahocphan %>">
+                                                                <%= course.mahocphan %> - <%= course.tenhocphan %>
+                                                            </option>
+                                                            <% }); %>
+                                                                <% } %>
+                                                </select>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <label for="namhoc" class="form-label">Năm Học</label>
+                                                <select class="form-select" id="namhoc" name="namhoc" required>
+                                                    <option value="">Chọn năm học</option>
+                                                    <% const currentYear=new Date().getFullYear(); for (let i=0; i < 5;
+                                                        i++) { const year=currentYear + i - 2; const
+                                                        academicYear=`${year}-${year+1}`; %>
+                                                        <option value="<%= academicYear %>" <%=i===2 ? 'selected' : ''
+                                                            %>>
+                                                            <%= academicYear %>
+                                                        </option>
+                                                        <% } %>
+                                                </select>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <label for="kihoc" class="form-label">Kỳ Học</label>
+                                                <select class="form-select" id="kihoc" name="kihoc" required>
+                                                    <option value="">Chọn kỳ học</option>
+                                                    <option value="1">Học kỳ 1</option>
+                                                    <option value="2">Học kỳ 2</option>
+                                                    <option value="3">Học kỳ 3</option>
+                                                </select>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <label for="thu" class="form-label">Thứ</label>
+                                                <select class="form-select" id="thu" name="thu" required>
+                                                    <option value="">Chọn thứ</option>
+                                                    <option value="Thứ 2">Thứ 2</option>
+                                                    <option value="Thứ 3">Thứ 3</option>
+                                                    <option value="Thứ 4">Thứ 4</option>
+                                                    <option value="Thứ 5">Thứ 5</option>
+                                                    <option value="Thứ 6">Thứ 6</option>
+                                                    <option value="Thứ 7">Thứ 7</option>
+                                                    <option value="Chủ Nhật">Chủ Nhật</option>
+                                                </select>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <label for="thoigianthi" class="form-label">Thời Gian Thi</label>
+                                                <input type="datetime-local" class="form-control" id="thoigianthi"
+                                                    name="thoigianthi" required>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <label for="phongthi" class="form-label">Phòng Thi</label>
+                                                <input type="text" class="form-control" id="phongthi" name="phongthi"
+                                                    placeholder="Nhập phòng thi" required>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <label for="giangviencoithi" class="form-label">Giảng Viên Coi
+                                                    Thi</label>
+                                                <input type="text" class="form-control" id="giangviencoithi"
+                                                    name="giangviencoithi" placeholder="Nhập tên giảng viên coi thi"
+                                                    required>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <label for="hinhthuathi" class="form-label">Hình Thức Thi</label>
+                                                <select class="form-select" id="hinhthuathi" name="hinhthuathi"
+                                                    required>
+                                                    <option value="">Chọn hình thức thi</option>
+                                                    <option value="Tự luận">Tự luận</option>
+                                                    <option value="Trắc nghiệm">Trắc nghiệm</option>
+                                                    <option value="Vấn đáp">Vấn đáp</option>
+                                                    <option value="Thực hành">Thực hành</option>
+                                                    <option value="Trực tuyến">Trực tuyến</option>
+                                                </select>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <label for="trangthai" class="form-label">Trạng Thái</label>
+                                                <select class="form-select" id="trangthai" name="trangthai" required>
+                                                    <option value="đã lên lịch" selected>Đã lên lịch</option>
+                                                    <option value="đã hoàn thành">Đã hoàn thành</option>
+                                                    <option value="hoãn thi">Hoãn thi</option>
+                                                </select>
+                                            </div>
+                                            <div class="col-md-12">
+                                                <button type="submit" class="btn btn-primary mt-3">Thêm Lịch
+                                                    Thi</button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card mt-4">
+                            <div class="card-header">
+                                <h5 class="card-title mb-0">Danh Sách Lịch Thi</h5>
+                            </div>
+                            <div class="card-body">
+                                <% if (typeof tableExists==='undefined' || tableExists) { %>
+                                    <div class="row filter-row">
+                                        <div class="col-md-3">
+                                            <input type="text" id="searchInput" class="form-control"
+                                                placeholder="Tìm kiếm...">
+                                        </div>
+                                        <div class="col-md-3">
+                                            <select id="courseFilter" class="form-select">
+                                                <option value="">Tất cả học phần</option>
+                                                <% if (courses && courses.length> 0) { %>
+                                                    <% courses.forEach(course=> { %>
+                                                        <option value="<%= course.mahocphan %>">
+                                                            <%= course.mahocphan %> - <%= course.tenhocphan %>
+                                                        </option>
+                                                        <% }); %>
+                                                            <% } %>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-2">
+                                            <input type="date" id="dateFilter" class="form-control"
+                                                placeholder="Ngày thi">
+                                        </div>
+                                        <div class="col-md-2">
+                                            <select id="roomFilter" class="form-select">
+                                                <option value="">Tất cả phòng thi</option>
+                                                <% if (rooms && rooms.length> 0) { %>
+                                                    <% rooms.forEach(room=> { %>
+                                                        <option value="<%= room.phongthi %>">
+                                                            <%= room.phongthi %>
+                                                        </option>
+                                                        <% }); %>
+                                                            <% } %>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-2">
+                                            <select id="statusFilter" class="form-select">
+                                                <option value="">Tất cả trạng thái</option>
+                                                <option value="đã lên lịch">Đã lên lịch</option>
+                                                <option value="đã hoàn thành">Đã hoàn thành</option>
+                                                <option value="hoãn thi">Hoãn thi</option>
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    <div class="table-responsive">
+                                        <table class="table table-bordered table-hover" id="examSchedulesTable">
+                                            <thead class="table-light">
+                                                <tr>
+                                                    <th>STT</th>
+                                                    <th>Mã học phần</th>
+                                                    <th>Tên học phần</th>
+                                                    <th>Năm học</th>
+                                                    <th>Kỳ học</th>
+                                                    <th>Ngày thi</th>
+                                                    <th>Giờ thi</th>
+                                                    <th>Phòng thi</th>
+                                                    <th>Giảng viên coi thi</th>
+                                                    <th>Hình thức thi</th>
+                                                    <th>Trạng thái</th>
+                                                    <th>Thao tác</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <% if (examSchedules && examSchedules.length> 0) { %>
+                                                    <% examSchedules.forEach((schedule, index)=> {
+                                                        const examDate = new Date(schedule.thoigianthi);
+                                                        const formattedDate = examDate.toLocaleDateString('vi-VN');
+                                                        const formattedTime = examDate.toLocaleTimeString('vi-VN', {
+                                                        hour: '2-digit', minute: '2-digit' });
+
+                                                        let statusClass = '';
+                                                        if (schedule.trangthai === 'đã lên lịch') statusClass =
+                                                        'bg-primary';
+                                                        else if (schedule.trangthai === 'đã hoàn thành') statusClass =
+                                                        'bg-success';
+                                                        else if (schedule.trangthai === 'hoãn thi') statusClass =
+                                                        'bg-danger';
+                                                        %>
+                                                        <tr>
+                                                            <td>
+                                                                <%= index + 1 %>
+                                                            </td>
+                                                            <td>
+                                                                <%= schedule.mahocphan %>
+                                                            </td>
+                                                            <td>
+                                                                <%= schedule.tenhocphan %>
+                                                            </td>
+                                                            <td>
+                                                                <%= schedule.namhoc %>
+                                                            </td>
+                                                            <td>
+                                                                <%= schedule.kihoc %>
+                                                            </td>
+                                                            <td>
+                                                                <%= formattedDate %>
+                                                            </td>
+                                                            <td>
+                                                                <%= formattedTime %>
+                                                            </td>
+                                                            <td>
+                                                                <%= schedule.phongthi %>
+                                                            </td>
+                                                            <td>
+                                                                <%= schedule.giangviencoithi %>
+                                                            </td>
+                                                            <td>
+                                                                <%= schedule.hinhthuathi %>
+                                                            </td>
+                                                            <td>
+                                                                <span class="badge <%= statusClass %>">
+                                                                    <%= schedule.trangthai %>
+                                                                </span>
+                                                            </td>
+                                                            <td class="action-buttons">
+                                                                <button class="btn btn-sm btn-primary edit-exam"
+                                                                    data-id="<%= schedule.id %>">Sửa</button>
+                                                                <button class="btn btn-sm btn-danger delete-exam"
+                                                                    data-id="<%= schedule.id %>"
+                                                                    data-course="<%= schedule.tenhocphan %>">Xóa</button>
+                                                            </td>
+                                                        </tr>
+                                                        <% }); %>
+                                                            <% } else { %>
+                                                                <tr>
+                                                                    <td colspan="12" class="text-center">Chưa có dữ liệu
+                                                                        lịch thi</td>
+                                                                </tr>
+                                                                <% } %>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    <% } else { %>
+                                        <div class="alert alert-warning">
+                                            <h4 class="alert-heading">Bảng dữ liệu lịch thi chưa được tạo!</h4>
+                                            <p>Bảng dữ liệu "lichthi" chưa tồn tại trong cơ sở dữ liệu. Bạn cần tạo bảng
+                                                này trước khi quản lý lịch thi.</p>
+                                            <hr>
+                                            <p class="mb-0">
+                                                <a href="/taikhoan/admin/create-lichthi-table" class="btn btn-primary">
+                                                    <i class="bi bi-table"></i> Tạo bảng lichthi
+                                                </a>
+                                            </p>
+                                        </div>
+                                        <% } %>
+                            </div>
+                        </div>
+    </div>
+
+    <!-- Edit Exam Schedule Modal -->
+    <div class="modal fade" id="editExamModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Chỉnh sửa Lịch Thi</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="editExamForm" action="/taikhoan/admin/lichthi/sua" method="POST" class="row g-3">
+                        <input type="hidden" id="edit_id" name="id">
+
+                        <div class="col-md-6">
+                            <label for="edit_mahocphan" class="form-label">Học Phần</label>
+                            <select class="form-select" id="edit_mahocphan" name="mahocphan" required>
+                                <option value="">Chọn học phần</option>
+                                <% if (courses && courses.length> 0) { %>
+                                    <% courses.forEach(course=> { %>
+                                        <option value="<%= course.mahocphan %>">
+                                            <%= course.mahocphan %> - <%= course.tenhocphan %>
+                                        </option>
+                                        <% }); %>
+                                            <% } %>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="edit_namhoc" class="form-label">Năm Học</label>
+                            <select class="form-select" id="edit_namhoc" name="namhoc" required>
+                                <option value="">Chọn năm học</option>
+                                <% for (let i=0; i < 5; i++) { const year=currentYear + i - 2; const
+                                    academicYear=`${year}-${year+1}`; %>
+                                    <option value="<%= academicYear %>">
+                                        <%= academicYear %>
+                                    </option>
+                                    <% } %>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="edit_kihoc" class="form-label">Kỳ Học</label>
+                            <select class="form-select" id="edit_kihoc" name="kihoc" required>
+                                <option value="">Chọn kỳ học</option>
+                                <option value="1">Học kỳ 1</option>
+                                <option value="2">Học kỳ 2</option>
+                                <option value="3">Học kỳ 3</option>
+                            </select>
+                        </div>
+
+                        <div class="col-md-3">
+                            <label for="edit_thu" class="form-label">Thứ</label>
+                            <select class="form-select" id="edit_thu" name="thu" required>
+                                <option value="">Chọn thứ</option>
+                                <option value="Thứ 2">Thứ 2</option>
+                                <option value="Thứ 3">Thứ 3</option>
+                                <option value="Thứ 4">Thứ 4</option>
+                                <option value="Thứ 5">Thứ 5</option>
+                                <option value="Thứ 6">Thứ 6</option>
+                                <option value="Thứ 7">Thứ 7</option>
+                                <option value="Chủ Nhật">Chủ Nhật</option>
+                            </select>
+                        </div>
+
+                        <div class="col-md-5">
+                            <label for="edit_thoigianthi" class="form-label">Thời Gian Thi</label>
+                            <input type="datetime-local" class="form-control" id="edit_thoigianthi" name="thoigianthi"
+                                required>
+                        </div>
+
+                        <div class="col-md-4">
+                            <label for="edit_phongthi" class="form-label">Phòng Thi</label>
+                            <input type="text" class="form-control" id="edit_phongthi" name="phongthi" required>
+                        </div>
+
+                        <div class="col-md-12">
+                            <label for="edit_giangviencoithi" class="form-label">Giảng Viên Coi Thi</label>
+                            <input type="text" class="form-control" id="edit_giangviencoithi" name="giangviencoithi"
+                                required>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label for="edit_hinhthuathi" class="form-label">Hình Thức Thi</label>
+                            <select class="form-select" id="edit_hinhthuathi" name="hinhthuathi" required>
+                                <option value="">Chọn hình thức thi</option>
+                                <option value="Tự luận">Tự luận</option>
+                                <option value="Trắc nghiệm">Trắc nghiệm</option>
+                                <option value="Vấn đáp">Vấn đáp</option>
+                                <option value="Thực hành">Thực hành</option>
+                                <option value="Trực tuyến">Trực tuyến</option>
+                            </select>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label for="edit_trangthai" class="form-label">Trạng Thái</label>
+                            <select class="form-select" id="edit_trangthai" name="trangthai" required>
+                                <option value="đã lên lịch">Đã lên lịch</option>
+                                <option value="đã hoàn thành">Đã hoàn thành</option>
+                                <option value="hoãn thi">Hoãn thi</option>
+                            </select>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                    <button type="button" class="btn btn-primary" id="saveExamChanges">Lưu thay đổi</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Exam Schedule Modal -->
+    <div class="modal fade" id="deleteExamModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Xác nhận xóa</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Bạn có chắc chắn muốn xóa lịch thi của môn <span id="delete_course_name"></span>?</p>
+                    <p class="text-danger">Lưu ý: Hành động này không thể hoàn tác!</p>
+                </div>
+                <div class="modal-footer">
+                    <form id="deleteExamForm" action="/taikhoan/admin/lichthi/xoa" method="POST">
+                        <input type="hidden" id="delete_id" name="id">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                        <button type="submit" class="btn btn-danger">Xóa</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-light text-center text-lg-start mt-5">
+        <div class="text-center p-3" style="background-color: rgba(0, 0, 0, 0.05);">
+            © 2023 Hệ thống Quản lý Đào tạo |
+            <a class="text-dark" href="/">home.com</a>
+        </div>
+    </footer>
+
+    <!-- Bootstrap Bundle with Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // Auto set day of week based on selected date
+            document.getElementById('thoigianthi').addEventListener('change', function () {
+                if (this.value) {
+                    const date = new Date(this.value);
+                    const dayOfWeek = ['Chủ Nhật', 'Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7'][date.getDay()];
+                    document.getElementById('thu').value = dayOfWeek;
+                }
+            });
+
+            // Same for edit form
+            document.getElementById('edit_thoigianthi').addEventListener('change', function () {
+                if (this.value) {
+                    const date = new Date(this.value);
+                    const dayOfWeek = ['Chủ Nhật', 'Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7'][date.getDay()];
+                    document.getElementById('edit_thu').value = dayOfWeek;
+                }
+            });
+
+            // Edit exam functionality
+            document.querySelectorAll('.edit-exam').forEach(button => {
+                button.addEventListener('click', function () {
+                    const examId = this.getAttribute('data-id');
+
+                    // Fetch exam details using AJAX
+                    fetch(`/taikhoan/admin/lichthi/chi-tiet/${examId}`)
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                const exam = data.examSchedule;
+
+                                // Populate form
+                                document.getElementById('edit_id').value = exam.id;
+                                document.getElementById('edit_mahocphan').value = exam.mahocphan;
+                                document.getElementById('edit_namhoc').value = exam.namhoc;
+                                document.getElementById('edit_kihoc').value = exam.kihoc;
+                                document.getElementById('edit_thu').value = exam.thu;
+                                document.getElementById('edit_thoigianthi').value = exam.formattedDateTime;
+                                document.getElementById('edit_phongthi').value = exam.phongthi;
+                                document.getElementById('edit_giangviencoithi').value = exam.giangviencoithi;
+                                document.getElementById('edit_hinhthuathi').value = exam.hinhthuathi;
+                                document.getElementById('edit_trangthai').value = exam.trangthai;
+
+                                // Show modal
+                                new bootstrap.Modal(document.getElementById('editExamModal')).show();
+                            } else {
+                                alert('Không thể tải thông tin lịch thi: ' + data.message);
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error fetching exam details:', error);
+                            alert('Đã xảy ra lỗi khi tải thông tin lịch thi');
+                        });
+                });
+            });
+
+            // Save exam changes
+            document.getElementById('saveExamChanges').addEventListener('click', function () {
+                document.getElementById('editExamForm').submit();
+            });
+
+            // Delete exam functionality
+            document.querySelectorAll('.delete-exam').forEach(button => {
+                button.addEventListener('click', function () {
+                    const examId = this.getAttribute('data-id');
+                    const courseName = this.getAttribute('data-course');
+
+                    document.getElementById('delete_id').value = examId;
+                    document.getElementById('delete_course_name').textContent = courseName;
+
+                    new bootstrap.Modal(document.getElementById('deleteExamModal')).show();
+                });
+            });
+
+            // Filtering functionality
+            const searchInput = document.getElementById('searchInput');
+            const courseFilter = document.getElementById('courseFilter');
+            const dateFilter = document.getElementById('dateFilter');
+            const roomFilter = document.getElementById('roomFilter');
+            const statusFilter = document.getElementById('statusFilter');
+
+            function filterTable() {
+                const searchValue = searchInput.value.toLowerCase();
+                const courseValue = courseFilter.value;
+                const dateValue = dateFilter.value;
+                const roomValue = roomFilter.value;
+                const statusValue = statusFilter.value;
+
+                document.querySelectorAll('#examSchedulesTable tbody tr').forEach(row => {
+                    // Skip rows that are just "no data" messages
+                    if (row.cells.length <= 1) return;
+
+                    const courseCode = row.cells[1].textContent.trim();
+                    const courseName = row.cells[2].textContent.toLowerCase();
+                    const examDate = row.cells[5].textContent.trim();
+                    const room = row.cells[7].textContent.trim();
+                    const teacher = row.cells[8].textContent.toLowerCase();
+                    const status = row.cells[10].textContent.trim().toLowerCase();
+
+                    // Search by course name, teacher
+                    const matchesSearch = courseName.includes(searchValue) ||
+                        teacher.includes(searchValue);
+
+                    // Course filter - exact match on course code
+                    const matchesCourse = courseValue === '' || courseCode === courseValue;
+
+                    // Date filter - We need to handle date format differences
+                    let matchesDate = true;
+                    if (dateValue) {
+                        // Convert to DD/MM/YYYY for comparison with Vietnamese format
+                        const filterDate = new Date(dateValue);
+                        const filterDateStr = filterDate.toLocaleDateString('vi-VN');
+                        matchesDate = examDate === filterDateStr;
+                    }
+
+                    // Room filter
+                    const matchesRoom = roomValue === '' || room === roomValue;
+
+                    // Status filter
+                    const matchesStatus = statusValue === '' || status.includes(statusValue);
+
+                    // Show/hide row based on all filters
+                    const shouldShow = matchesSearch && matchesCourse && matchesDate &&
+                        matchesRoom && matchesStatus;
+                    row.style.display = shouldShow ? '' : 'none';
+                });
+            }
+
+            searchInput.addEventListener('input', filterTable);
+            courseFilter.addEventListener('change', filterTable);
+            dateFilter.addEventListener('change', filterTable);
+            roomFilter.addEventListener('change', filterTable);
+            statusFilter.addEventListener('change', filterTable);
+        });
+    </script>
+</body>
+
+</html>
