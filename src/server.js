@@ -37,12 +37,26 @@ app.use((req, res, next) => {
     next();
 });
 
+// Enable debug middleware to see route requests
+app.use((req, res, next) => {
+    console.log(`${new Date().toISOString()} - ${req.method} ${req.url}`);
+    next();
+});
+
 // Database connection
 connectDB();
 
 // Routes
 app.use('/', homeRoutes);
 app.use('/taikhoan', taiKhoanRoutes);
+
+// Make sure the admin directory exists for the views
+const fs = require('fs');
+const adminViewsDir = path.join(__dirname, 'views', 'admin');
+if (!fs.existsSync(adminViewsDir)) {
+    fs.mkdirSync(adminViewsDir, { recursive: true });
+    console.log('Created admin views directory');
+}
 
 // Only in development mode, include admin reset route
 if (process.env.NODE_ENV !== 'production') {

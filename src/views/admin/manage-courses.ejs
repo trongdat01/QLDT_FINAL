@@ -1,0 +1,1105 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>
+        <%= title %>
+    </title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root {
+            --sidebar-width: 280px;
+            --topbar-height: 70px;
+            --primary-color: #4e73df;
+            --secondary-color: #f8f9fc;
+            --text-dark: #5a5c69;
+        }
+
+        body {
+            font-family: 'Nunito', sans-serif;
+            background-color: var(--secondary-color);
+            color: var(--text-dark);
+        }
+
+        .wrapper {
+            display: flex;
+            width: 100%;
+            align-items: stretch;
+        }
+
+        .sidebar {
+            min-width: var(--sidebar-width);
+            max-width: var(--sidebar-width);
+            background: var(--primary-color);
+            color: #fff;
+            transition: all 0.3s;
+            height: 100vh;
+            position: fixed;
+            z-index: 100;
+        }
+
+        .sidebar.collapsed {
+            margin-left: calc(-1 * var(--sidebar-width));
+        }
+
+        .sidebar .sidebar-header {
+            padding: 1.5rem 1rem;
+            text-align: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .sidebar .sidebar-header h3 {
+            margin: 0;
+            font-weight: 800;
+            font-size: 1.5rem;
+        }
+
+        .sidebar ul.components {
+            padding: 0;
+            margin: 0;
+        }
+
+        .sidebar ul li {
+            list-style: none;
+        }
+
+        .sidebar ul li a {
+            padding: 1rem 1.5rem;
+            display: block;
+            color: #fff;
+            text-decoration: none;
+            transition: all 0.3s;
+            font-weight: 500;
+        }
+
+        .sidebar ul li a:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .sidebar ul li a i {
+            margin-right: 10px;
+            width: 20px;
+            text-align: center;
+        }
+
+        .sidebar ul li.active a {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .sidebar ul.collapse {
+            background-color: rgba(0, 0, 0, 0.1);
+        }
+
+        .content {
+            width: 100%;
+            min-height: 100vh;
+            transition: all 0.3s;
+            margin-left: var(--sidebar-width);
+        }
+
+        .content.full-width {
+            margin-left: 0;
+        }
+
+        .topbar {
+            height: var(--topbar-height);
+            background: #fff;
+            box-shadow: 0 .15rem 1.75rem 0 rgba(58, 59, 69, .15);
+            display: flex;
+            align-items: center;
+            padding: 0 1rem;
+            position: fixed;
+            width: calc(100% - var(--sidebar-width));
+            z-index: 99;
+        }
+
+        .topbar.full-width {
+            width: 100%;
+        }
+
+        .topbar-nav {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            align-items: center;
+        }
+
+        .sidebar-toggle {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            color: var(--text-dark);
+            cursor: pointer;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+        }
+
+        .user-info img {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            margin-right: 10px;
+        }
+
+        .main-content {
+            padding: calc(var(--topbar-height) + 1.5rem) 1.5rem 1.5rem 1.5rem;
+        }
+
+        .card {
+            border: none;
+            box-shadow: 0 .15rem 1.75rem 0 rgba(58, 59, 69, .15);
+            border-radius: 0.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .card-header {
+            background-color: #f8f9fc;
+            border-bottom: 1px solid #e3e6f0;
+            padding: 0.75rem 1.25rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .card-header h5 {
+            margin: 0;
+            font-weight: 700;
+            color: #4e73df;
+        }
+
+        .btn-add {
+            background-color: #1cc88a;
+            color: white;
+        }
+
+        .btn-add:hover {
+            background-color: #169b6b;
+            color: white;
+        }
+
+        .table-responsive {
+            overflow-x: auto;
+        }
+
+        .table-hover tbody tr:hover {
+            background-color: rgba(0, 0, 0, 0.02);
+        }
+
+        .footer {
+            padding: 1.5rem;
+            text-align: center;
+            font-size: 0.9rem;
+            color: #858796;
+        }
+
+        .nav-tabs .nav-link {
+            color: #4e73df;
+            font-weight: 600;
+        }
+
+        .nav-tabs .nav-link.active {
+            color: #2e59d9;
+            border-color: #dddfeb #dddfeb #fff;
+        }
+
+        .badge-status {
+            padding: 0.4em 0.6em;
+            font-size: 0.75rem;
+        }
+
+        .badge-registered {
+            background-color: #1cc88a;
+        }
+
+        .badge-unregistered {
+            background-color: #858796;
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                margin-left: calc(-1 * var(--sidebar-width));
+            }
+
+            .sidebar.active {
+                margin-left: 0;
+            }
+
+            .content {
+                margin-left: 0;
+            }
+
+            .topbar {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="wrapper">
+        <!-- Sidebar -->
+        <nav id="sidebar" class="sidebar">
+            <div class="sidebar-header">
+                <h3>Quản lý Đào tạo</h3>
+            </div>
+
+            <ul class="components">
+                <li>
+                    <a href="/taikhoan/admin/dashboard"><i class="fas fa-tachometer-alt"></i> Bảng điều khiển</a>
+                </li>
+                <li>
+                    <a href="#userSubmenu" data-bs-toggle="collapse" aria-expanded="false" class="dropdown-toggle">
+                        <i class="fas fa-users"></i> Quản lý người dùng
+                    </a>
+                    <ul class="collapse list-unstyled" id="userSubmenu">
+                        <li>
+                            <a href="/taikhoan/admin/manage-admins"><i class="fas fa-user-shield"></i> Quản trị viên</a>
+                        </li>
+                        <li>
+                            <a href="/taikhoan/admin/manage-students"><i class="fas fa-user-graduate"></i> Sinh viên</a>
+                        </li>
+                    </ul>
+                </li>
+                <li>
+                    <a href="/taikhoan/admin/manage-news"><i class="fas fa-newspaper"></i> Quản lý tin tức</a>
+                </li>
+                <li class="active">
+                    <a href="#courseSubmenu" data-bs-toggle="collapse" aria-expanded="true" class="dropdown-toggle">
+                        <i class="fas fa-book"></i> Quản lý học phần
+                    </a>
+                    <ul class="collapse show list-unstyled" id="courseSubmenu">
+                        <li class="active">
+                            <a href="/taikhoan/admin/manage-courses"><i class="fas fa-list"></i> Đăng ký học phần</a>
+                        </li>
+                    </ul>
+                </li>
+                <li>
+                    <a href="#"><i class="fas fa-clipboard-list"></i> Quản lý điểm</a>
+                </li>
+                <li>
+                    <a href="#scheduleSubmenu" data-bs-toggle="collapse" aria-expanded="false" class="dropdown-toggle">
+                        <i class="fas fa-calendar-alt"></i> Lịch học - Lịch thi
+                    </a>
+                    <ul class="collapse list-unstyled" id="scheduleSubmenu">
+                        <li>
+                            <a href="#"><i class="fas fa-calendar-day"></i> Lịch học</a>
+                        </li>
+                        <li>
+                            <a href="#"><i class="fas fa-calendar-check"></i> Lịch thi</a>
+                        </li>
+                    </ul>
+                </li>
+                <li>
+                    <a href="#"><i class="fas fa-money-bill-wave"></i> Quản lý tài chính</a>
+                </li>
+                <li>
+                    <a href="#"><i class="fas fa-cog"></i> Cài đặt hệ thống</a>
+                </li>
+                <li>
+                    <a href="/taikhoan/dang-xuat"><i class="fas fa-sign-out-alt"></i> Đăng xuất</a>
+                </li>
+            </ul>
+        </nav>
+
+        <!-- Page Content -->
+        <div id="content" class="content">
+            <nav class="topbar">
+                <div class="topbar-nav">
+                    <button type="button" id="sidebarCollapse" class="sidebar-toggle">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                    <div class="user-info">
+                        <img src="/images/default-avatar.png" alt="Admin Avatar">
+                        <div>
+                            <span>Xin chào, Admin</span>
+                            <div class="small">
+                                <%= user.email %>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </nav>
+
+            <div class="main-content">
+                <div class="container-fluid">
+                    <h1 class="h3 mb-4 text-gray-800">Quản lý Đăng ký Học phần</h1>
+
+                    <% if (typeof success !=='undefined' && success) { %>
+                        <div class="alert alert-success" role="alert">
+                            <%= success %>
+                        </div>
+                        <% } %>
+
+                            <% if (typeof error !=='undefined' && error) { %>
+                                <div class="alert alert-danger" role="alert">
+                                    <%= error %>
+                                </div>
+                                <% } %>
+
+                                    <% if (typeof debug !=='undefined' ) { %>
+                                        <div class="alert alert-secondary alert-dismissible fade show" role="alert">
+                                            <h6 class="fw-bold">Debug Information</h6>
+                                            <p class="mb-0">
+                                                Courses: <%= debug.courses %> |
+                                                    Registrations: <%= debug.registrations %> |
+                                                        Students: <%= debug.students %> |
+                                                            Time: <%= debug.timestamp %>
+                                            </p>
+                                            <button type="button" class="btn-close" data-bs-dismiss="alert"
+                                                aria-label="Close"></button>
+                                        </div>
+                                        <% } %>
+
+                                            <ul class="nav nav-tabs mb-4" id="myTab" role="tablist">
+                                                <li class="nav-item" role="presentation">
+                                                    <button class="nav-link active" id="courses-tab"
+                                                        data-bs-toggle="tab" data-bs-target="#courses" type="button"
+                                                        role="tab" aria-controls="courses" aria-selected="true">
+                                                        <i class="fas fa-list"></i> Danh sách học phần
+                                                    </button>
+                                                </li>
+                                                <li class="nav-item" role="presentation">
+                                                    <button class="nav-link" id="students-tab" data-bs-toggle="tab"
+                                                        data-bs-target="#students" type="button" role="tab"
+                                                        aria-controls="students" aria-selected="false">
+                                                        <i class="fas fa-clipboard-list"></i> Danh sách sinh viên đã
+                                                        đăng ký
+                                                    </button>
+                                                </li>
+                                            </ul>
+
+                                            <div class="tab-content" id="myTabContent">
+                                                <!-- Courses Tab -->
+                                                <div class="tab-pane fade show active" id="courses" role="tabpanel"
+                                                    aria-labelledby="courses-tab">
+                                                    <div class="card shadow mb-4">
+                                                        <div class="card-header">
+                                                            <h5>Danh sách học phần</h5>
+                                                            <button type="button" class="btn btn-add"
+                                                                data-bs-toggle="modal" data-bs-target="#addCourseModal">
+                                                                <i class="fas fa-plus"></i> Thêm học phần
+                                                            </button>
+                                                        </div>
+                                                        <div class="card-body">
+                                                            <div class="table-responsive">
+                                                                <table class="table table-hover" id="courseTable">
+                                                                    <thead class="table-light">
+                                                                        <tr>
+                                                                            <th>Mã học phần</th>
+                                                                            <th>Tên học phần</th>
+                                                                            <th>Khoa</th>
+                                                                            <th>Học kỳ</th>
+                                                                            <th>Loại học phần</th>
+                                                                            <th>Số tín chỉ</th>
+                                                                            <th>Thao tác</th>
+                                                                        </tr>
+                                                                    </thead>
+                                                                    <tbody>
+                                                                        <% if (courses && courses.length> 0) { %>
+                                                                            <% courses.forEach(course=> { %>
+                                                                                <tr>
+                                                                                    <td>
+                                                                                        <%= course.mahocphan %>
+                                                                                    </td>
+                                                                                    <td>
+                                                                                        <%= course.tenhocphan %>
+                                                                                    </td>
+                                                                                    <td>
+                                                                                        <%= course.khoa %>
+                                                                                    </td>
+                                                                                    <td>
+                                                                                        <%= course.hocki %>
+                                                                                    </td>
+                                                                                    <td>
+                                                                                        <%= course.loaihocphan %>
+                                                                                    </td>
+                                                                                    <td>
+                                                                                        <%= course.sotinchi %>
+                                                                                    </td>
+                                                                                    <td>
+                                                                                        <button type="button"
+                                                                                            class="btn btn-sm btn-warning"
+                                                                                            onclick="loadCourseForEdit('<%= course.mahocphan %>')"
+                                                                                            data-bs-toggle="modal"
+                                                                                            data-bs-target="#editCourseModal">
+                                                                                            <i class="fas fa-edit"></i>
+                                                                                        </button>
+                                                                                        <button type="button"
+                                                                                            class="btn btn-sm btn-danger"
+                                                                                            data-bs-toggle="modal"
+                                                                                            data-bs-target="#deleteCourseModal"
+                                                                                            data-course-id="<%= course.mahocphan %>"
+                                                                                            data-course-name="<%= course.tenhocphan %>">
+                                                                                            <i class="fas fa-trash"></i>
+                                                                                        </button>
+                                                                                        <button type="button"
+                                                                                            class="btn btn-sm btn-info"
+                                                                                            data-bs-toggle="modal"
+                                                                                            data-bs-target="#viewStudentsModal"
+                                                                                            data-course-id="<%= course.mahocphan %>"
+                                                                                            data-course-name="<%= course.tenhocphan %>">
+                                                                                            <i class="fas fa-users"></i>
+                                                                                            Xem sinh viên
+                                                                                        </button>
+                                                                                    </td>
+                                                                                </tr>
+                                                                                <% }); %>
+                                                                                    <% } else { %>
+                                                                                        <tr>
+                                                                                            <td colspan="7"
+                                                                                                class="text-center">
+                                                                                                Không có dữ liệu học
+                                                                                                phần</td>
+                                                                                        </tr>
+                                                                                        <% } %>
+                                                                    </tbody>
+                                                                </table>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <!-- Students Tab -->
+                                                <div class="tab-pane fade" id="students" role="tabpanel"
+                                                    aria-labelledby="students-tab">
+                                                    <div class="card shadow mb-4">
+                                                        <div class="card-header">
+                                                            <h5>Danh sách sinh viên đã đăng ký học phần</h5>
+                                                            <button type="button" class="btn btn-add"
+                                                                data-bs-toggle="modal"
+                                                                data-bs-target="#addStudentToCourseModal">
+                                                                <i class="fas fa-user-plus"></i> Thêm sinh viên vào học
+                                                                phần
+                                                            </button>
+                                                        </div>
+                                                        <div class="card-body">
+                                                            <div class="table-responsive">
+                                                                <table class="table table-hover" id="registrationTable">
+                                                                    <thead class="table-light">
+                                                                        <tr>
+                                                                            <th>ID</th>
+                                                                            <th>Mã sinh viên</th>
+                                                                            <th>Mã học phần</th>
+                                                                            <th>Trạng thái</th>
+                                                                            <th>Ngày đăng ký</th>
+                                                                            <th>Thao tác</th>
+                                                                        </tr>
+                                                                    </thead>
+                                                                    <tbody>
+                                                                        <% if (registrations && registrations.length> 0)
+                                                                            { %>
+                                                                            <% registrations.forEach(reg=> { %>
+                                                                                <tr>
+                                                                                    <td>
+                                                                                        <%= reg.id %>
+                                                                                    </td>
+                                                                                    <td>
+                                                                                        <%= reg.msv %>
+                                                                                    </td>
+                                                                                    <td>
+                                                                                        <%= reg.mahocphan %>
+                                                                                    </td>
+                                                                                    <td>
+                                                                                        <% if
+                                                                                            (reg.trangthaidangky==='đã đăng ký'
+                                                                                            ) { %>
+                                                                                            <span
+                                                                                                class="badge bg-success">Đã
+                                                                                                đăng ký</span>
+                                                                                            <% } else if
+                                                                                                (reg.trangthaidangky==='chưa đăng ký'
+                                                                                                ) { %>
+                                                                                                <span
+                                                                                                    class="badge bg-warning">Chưa
+                                                                                                    đăng ký</span>
+                                                                                                <% } else { %>
+                                                                                                    <span
+                                                                                                        class="badge bg-secondary">Đã
+                                                                                                        hủy</span>
+                                                                                                    <% } %>
+                                                                                    </td>
+                                                                                    <td>
+                                                                                        <%= new
+                                                                                            Date(reg.ngaydangky).toLocaleString()
+                                                                                            %>
+                                                                                    </td>
+                                                                                    <td>
+                                                                                        <% if
+                                                                                            (reg.trangthaidangky==='đã đăng ký'
+                                                                                            ) { %>
+                                                                                            <button type="button"
+                                                                                                class="btn btn-sm btn-danger"
+                                                                                                data-bs-toggle="modal"
+                                                                                                data-bs-target="#cancelRegistrationModal"
+                                                                                                data-reg-id="<%= reg.id %>"
+                                                                                                data-course-id="<%= reg.mahocphan %>"
+                                                                                                data-student-id="<%= reg.msv %>">
+                                                                                                <i
+                                                                                                    class="fas fa-times-circle"></i>
+                                                                                                Hủy đăng ký
+                                                                                            </button>
+                                                                                            <% } else if
+                                                                                                (reg.trangthaidangky==='chưa đăng ký'
+                                                                                                ) { %>
+                                                                                                <button type="button"
+                                                                                                    class="btn btn-sm btn-success"
+                                                                                                    data-bs-toggle="modal"
+                                                                                                    data-bs-target="#activateRegistrationModal"
+                                                                                                    data-reg-id="<%= reg.id %>"
+                                                                                                    data-course-id="<%= reg.mahocphan %>"
+                                                                                                    data-student-id="<%= reg.msv %>">
+                                                                                                    <i
+                                                                                                        class="fas fa-check-circle"></i>
+                                                                                                    Kích hoạt
+                                                                                                </button>
+                                                                                                <% } else { %>
+                                                                                                    <span
+                                                                                                        class="text-muted">Đã
+                                                                                                        hủy</span>
+                                                                                                    <% } %>
+                                                                                    </td>
+                                                                                </tr>
+                                                                                <% }); %>
+                                                                                    <% } else { %>
+                                                                                        <tr>
+                                                                                            <td colspan="6"
+                                                                                                class="text-center">
+                                                                                                Không có dữ liệu đăng ký
+                                                                                                học phần</td>
+                                                                                        </tr>
+                                                                                        <% } %>
+                                                                    </tbody>
+                                                                </table>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                </div>
+                <footer class="footer">
+                    <div class="container">
+                        <span>© 2023 Hệ thống Quản lý Đào tạo Đại học. All rights reserved.</span>
+                    </div>
+                </footer>
+            </div>
+        </div>
+
+        <!-- Add Course Modal -->
+        <div class="modal fade" id="addCourseModal" tabindex="-1" aria-labelledby="addCourseModalLabel"
+            aria-hidden="true">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header bg-success text-white">
+                        <h5 class="modal-title" id="addCourseModalLabel">Thêm học phần mới</h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                            aria-label="Close"></button>
+                    </div>
+                    <form action="/taikhoan/admin/add-course" method="POST">
+                        <div class="modal-body">
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label for="mahocphan" class="form-label">Mã học phần <span
+                                            class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="mahocphan" name="mahocphan" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="tenhocphan" class="form-label">Tên học phần <span
+                                            class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="tenhocphan" name="tenhocphan" required>
+                                </div>
+                            </div>
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label for="khoa" class="form-label">Khoa <span class="text-danger">*</span></label>
+                                    <select class="form-select" id="khoa" name="khoa" required>
+                                        <option value="" selected disabled>Chọn khoa</option>
+                                        <option value="Công nghệ thông tin">Công nghệ thông tin</option>
+                                        <option value="Kinh tế">Kinh tế</option>
+                                        <option value="Ngoại ngữ">Ngoại ngữ</option>
+                                        <option value="Kỹ thuật">Kỹ thuật</option>
+                                        <option value="Y dược">Y dược</option>
+                                        <option value="Luật">Luật</option>
+                                        <option value="Xây dựng">Xây dựng</option>
+                                        <option value="Sư phạm">Sư phạm</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="hocki" class="form-label">Học kỳ <span
+                                            class="text-danger">*</span></label>
+                                    <select class="form-select" id="hocki" name="hocki" required>
+                                        <option value="" selected disabled>Chọn học kỳ</option>
+                                        <option value="Học kỳ 1">Học kỳ 1</option>
+                                        <option value="Học kỳ 2">Học kỳ 2</option>
+                                        <option value="Học kỳ hè">Học kỳ hè</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label for="loaihocphan" class="form-label">Loại học phần <span
+                                            class="text-danger">*</span></label>
+                                    <select class="form-select" id="loaihocphan" name="loaihocphan" required>
+                                        <option value="" selected disabled>Chọn loại học phần</option>
+                                        <option value="bắt buộc">Bắt buộc</option>
+                                        <option value="tự chọn">Tự chọn</option>
+                                        <option value="đồ án">Đồ án</option>
+                                        <option value="thực tập">Thực tập</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="sotinchi" class="form-label">Số tín chỉ <span
+                                            class="text-danger">*</span></label>
+                                    <input type="number" class="form-control" id="sotinchi" name="sotinchi" min="1"
+                                        max="10" required>
+                                </div>
+                            </div>
+                            <div class="mt-3">
+                                <p class="text-danger mb-0"><small>(*) Thông tin bắt buộc</small></p>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                            <button type="submit" class="btn btn-success">Thêm mới</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Edit Course Modal -->
+        <div class="modal fade" id="editCourseModal" tabindex="-1" aria-labelledby="editCourseModalLabel"
+            aria-hidden="true">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header bg-warning text-white">
+                        <h5 class="modal-title" id="editCourseModalLabel">Chỉnh sửa học phần</h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                            aria-label="Close"></button>
+                    </div>
+                    <form action="/taikhoan/admin/edit-course" method="POST">
+                        <div class="modal-body">
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label for="edit_mahocphan" class="form-label">Mã học phần <span
+                                            class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="edit_mahocphan" name="mahocphan"
+                                        readonly required>
+                                    <small class="text-muted">Mã học phần không thể thay đổi</small>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="edit_tenhocphan" class="form-label">Tên học phần <span
+                                            class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="edit_tenhocphan" name="tenhocphan"
+                                        required>
+                                </div>
+                            </div>
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label for="edit_khoa" class="form-label">Khoa <span
+                                            class="text-danger">*</span></label>
+                                    <select class="form-select" id="edit_khoa" name="khoa" required>
+                                        <option value="" disabled>Chọn khoa</option>
+                                        <option value="Công nghệ thông tin">Công nghệ thông tin</option>
+                                        <option value="Kinh tế">Kinh tế</option>
+                                        <option value="Ngoại ngữ">Ngoại ngữ</option>
+                                        <option value="Kỹ thuật">Kỹ thuật</option>
+                                        <option value="Y dược">Y dược</option>
+                                        <option value="Luật">Luật</option>
+                                        <option value="Xây dựng">Xây dựng</option>
+                                        <option value="Sư phạm">Sư phạm</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="edit_hocki" class="form-label">Học kỳ <span
+                                            class="text-danger">*</span></label>
+                                    <select class="form-select" id="edit_hocki" name="hocki" required>
+                                        <option value="" disabled>Chọn học kỳ</option>
+                                        <option value="Học kỳ 1">Học kỳ 1</option>
+                                        <option value="Học kỳ 2">Học kỳ 2</option>
+                                        <option value="Học kỳ hè">Học kỳ hè</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label for="edit_loaihocphan" class="form-label">Loại học phần <span
+                                            class="text-danger">*</span></label>
+                                    <select class="form-select" id="edit_loaihocphan" name="loaihocphan" required>
+                                        <option value="" disabled>Chọn loại học phần</option>
+                                        <option value="bắt buộc">Bắt buộc</option>
+                                        <option value="tự chọn">Tự chọn</option>
+                                        <option value="đồ án">Đồ án</option>
+                                        <option value="thực tập">Thực tập</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="edit_sotinchi" class="form-label">Số tín chỉ <span
+                                            class="text-danger">*</span></label>
+                                    <input type="number" class="form-control" id="edit_sotinchi" name="sotinchi" min="1"
+                                        max="10" required>
+                                </div>
+                            </div>
+                            <div class="mt-3">
+                                <p class="text-danger mb-0"><small>(*) Thông tin bắt buộc</small></p>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                            <button type="submit" class="btn btn-warning">Cập nhật</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- View Students Modal -->
+        <div class="modal fade" id="viewStudentsModal" tabindex="-1" aria-labelledby="viewStudentsModalLabel"
+            aria-hidden="true">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header bg-info text-white">
+                        <h5 class="modal-title" id="viewStudentsModalLabel">Sinh viên đã đăng ký học phần: <span
+                                id="view_course_name"></span></h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                            aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>MSV</th>
+                                        <th>Họ tên</th>
+                                        <th>Ngày đăng ký</th>
+                                        <th>Trạng thái</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="studentList">
+                                    <tr>
+                                        <td colspan="4" class="text-center">Đang tải dữ liệu...</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Cancel Registration Modal -->
+        <div class="modal fade" id="cancelRegistrationModal" tabindex="-1"
+            aria-labelledby="cancelRegistrationModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header bg-danger text-white">
+                        <h5 class="modal-title" id="cancelRegistrationModalLabel">Xác nhận hủy đăng ký</h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                            aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p>Bạn có chắc chắn muốn hủy đăng ký học phần cho sinh viên có mã số <strong
+                                id="cancel_student_id"></strong> không?</p>
+                        <p class="text-danger">Lưu ý: Thao tác này sẽ đánh dấu trạng thái đăng ký là "đã hủy".</p>
+                    </div>
+                    <div class="modal-footer">
+                        <form action="/taikhoan/admin/cancel-registration" method="POST">
+                            <input type="hidden" id="cancel_id" name="id">
+                            <input type="hidden" id="cancel_mahocphan" name="mahocphan">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                            <button type="submit" class="btn btn-danger">Xác nhận hủy</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Delete Course Modal -->
+        <div class="modal fade" id="deleteCourseModal" tabindex="-1" aria-labelledby="deleteCourseModalLabel"
+            aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header bg-danger text-white">
+                        <h5 class="modal-title" id="deleteCourseModalLabel">Xác nhận xóa học phần</h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                            aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p>Bạn có chắc chắn muốn xóa học phần <strong id="delete_course_name"></strong> không?</p>
+                        <p class="text-danger">Lưu ý: Bạn chỉ có thể xóa học phần chưa có sinh viên đăng ký!</p>
+                        <div class="mt-3" id="forceDeletionSection" style="display: none;">
+                            <div class="alert alert-warning">
+                                <strong>Cảnh báo!</strong> Nếu học phần có dữ liệu liên quan, bạn có thể buộc xóa. Điều
+                                này sẽ xóa TẤT CẢ dữ liệu liên quan bao gồm đăng ký, điểm, lịch học và lịch thi.
+                            </div>
+                            <div class="form-check form-switch mb-3">
+                                <input class="form-check-input" type="checkbox" id="forceDeleteCheck"
+                                    onchange="toggleForceDelete()">
+                                <label class="form-check-label text-danger" for="forceDeleteCheck"> Tôi muốn buộc xóa
+                                    học phần này và TẤT CẢ dữ liệu liên quan </label>
+                            </div>
+                            <div id="forceDeleteConfirm" style="display: none;">
+                                <label for="deleteConfirmation" class="form-label text-danger">Nhập "DELETE" để xác
+                                    nhận:</label>
+                                <input type="text" class="form-control" id="deleteConfirmation" name="confirmation"
+                                    placeholder="Nhập DELETE để xác nhận" required>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <form action="/taikhoan/admin/delete-course" method="POST" id="deleteCourseForm">
+                            <input type="hidden" id="delete_mahocphan" name="mahocphan">
+                            <button type="submit" class="btn btn-danger" id="normalDeleteBtn">Xóa</button>
+                        </form>
+                        <form action="/taikhoan/admin/force-delete-course" method="POST" id="forceDeleteForm"
+                            style="display: none;">
+                            <input type="hidden" id="force_delete_mahocphan" name="mahocphan">
+                            <input type="hidden" id="force_delete_confirmation" name="confirmation">
+                            <button type="submit" class="btn btn-danger">Buộc xóa</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Add Student to Course Modal -->
+        <div class="modal fade" id="addStudentToCourseModal" tabindex="-1"
+            aria-labelledby="addStudentToCourseModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header bg-success text-white">
+                        <h5 class="modal-title" id="addStudentToCourseModalLabel">Thêm sinh viên vào học phần</h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                            aria-label="Close"></button>
+                    </div>
+                    <form action="/taikhoan/admin/register-student-course" method="POST">
+                        <div class="modal-body">
+                            <div class="mb-3">
+                                <label for="mahocphan_add" class="form-label">Chọn học phần <span
+                                        class="text-danger">*</span></label>
+                                <select class="form-select" id="mahocphan_add" name="mahocphan" required>
+                                    <option value="" selected disabled>Chọn học phần</option>
+                                    <% if (courses && courses.length> 0) { %>
+                                        <% courses.forEach(course=> { %>
+                                            <option value="<%= course.mahocphan %>">
+                                                <%= course.tenhocphan %> - <%= course.mahocphan %>
+                                            </option>
+                                            <% }); %>
+                                                <% } %>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label for="msv_add" class="form-label">Chọn sinh viên <span
+                                        class="text-danger">*</span></label>
+                                <select class="form-select" id="msv_add" name="msv" required>
+                                    <option value="" selected disabled>Chọn sinh viên</option>
+                                    <% if (students && students.length> 0) { %>
+                                        <% students.forEach(student=> { %>
+                                            <option value="<%= student.msv %>">
+                                                <%= student.hovaten %> - <%= student.msv %>
+                                            </option>
+                                            <% }); %>
+                                                <% } %>
+                                </select>
+                            </div>
+                            <div class="alert alert-info">
+                                <i class="fas fa-info-circle"></i> Sinh viên sẽ được thêm vào học phần với trạng thái
+                                "Chưa đăng ký". Bạn có thể kích hoạt đăng ký sau.
+                            </div>
+                            <div class="mt-3">
+                                <p class="text-danger mb-0"><small>(*) Thông tin bắt buộc</small></p>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                            <button type="submit" class="btn btn-success">Thêm sinh viên</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Activate Registration Modal -->
+        <div class="modal fade" id="activateRegistrationModal" tabindex="-1"
+            aria-labelledby="activateRegistrationModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header bg-success text-white">
+                        <h5 class="modal-title" id="activateRegistrationModalLabel">Kích hoạt đăng ký học phần</h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                            aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p>Bạn có chắc chắn muốn kích hoạt đăng ký học phần cho sinh viên có mã số <strong
+                                id="activate_student_id"></strong> không?</p>
+                        <p>Trạng thái đăng ký sẽ được đổi từ "Chưa đăng ký" thành "Đã đăng ký".</p>
+                    </div>
+                    <div class="modal-footer">
+                        <form action="/taikhoan/admin/activate-registration" method="POST">
+                            <input type="hidden" id="activate_id" name="id">
+                            <input type="hidden" id="activate_mahocphan" name="mahocphan">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                            <button type="submit" class="btn btn-success">Xác nhận kích hoạt</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+        <script>
+            document.addEventListener('DOMContentLoaded', function () {
+                // Toggle sidebar
+                document.getElementById('sidebarCollapse').addEventListener('click', function () {
+                    document.getElementById('sidebar').classList.toggle('collapsed');
+                    document.getElementById('content').classList.toggle('full-width');
+                    document.querySelector('.topbar').classList.toggle('full-width');
+                });
+
+                // Set up view students modal
+                const viewStudentsModal = document.getElementById('viewStudentsModal');
+                if (viewStudentsModal) {
+                    viewStudentsModal.addEventListener('show.bs.modal', function (event) {
+                        const button = event.relatedTarget;
+                        const courseId = button.getAttribute('data-course-id');
+                        const courseName = button.getAttribute('data-course-name');
+                        document.getElementById('view_course_name').textContent = courseName;
+                        // Fetch students registered for this course
+                        fetch(`/taikhoan/admin/get-course-students/${courseId}`)
+                            .then(response => response.json())
+                            .then(data => {
+                                const studentList = document.getElementById('studentList');
+                                if (data.success && data.students && data.students.length > 0) {
+                                    let html = '';
+                                    data.students.forEach(student => {
+                                        html += `<tr>
+                                            <td>${student.msv}</td>
+                                            <td>${student.hovaten}</td>
+                                            <td>${new Date(student.ngaydangky).toLocaleString()}</td>
+                                            <td>${student.trangthaidangky === 'đã đăng ký'
+                                                ? '<span class="badge bg-success">Đã đăng ký</span>'
+                                                : '<span class="badge bg-secondary">Đã hủy</span>'}
+                                            </td>
+                                        </tr>`;
+                                    });
+                                    studentList.innerHTML = html;
+                                } else {
+                                    studentList.innerHTML = '<tr><td colspan="4" class="text-center">Không có sinh viên đăng ký học phần này</td></tr>';
+                                }
+                            })
+                            .catch(error => {
+                                console.error('Error loading students:', error);
+                                document.getElementById('studentList').innerHTML =
+                                    '<tr><td colspan="4" class="text-center text-danger">Đã xảy ra lỗi khi tải dữ liệu</td></tr>';
+                            });
+                    });
+                }
+
+                // Set up cancel registration modal
+                const cancelRegistrationModal = document.getElementById('cancelRegistrationModal');
+                if (cancelRegistrationModal) {
+                    cancelRegistrationModal.addEventListener('show.bs.modal', function (event) {
+                        const button = event.relatedTarget;
+                        const regId = button.getAttribute('data-reg-id');
+                        const courseId = button.getAttribute('data-course-id');
+                        const studentId = button.getAttribute('data-student-id');
+                        document.getElementById('cancel_id').value = regId;
+                        document.getElementById('cancel_mahocphan').value = courseId;
+                        document.getElementById('cancel_student_id').textContent = studentId;
+                    });
+                }
+
+                // Function to load course for editing
+                window.loadCourseForEdit = function (mahocphan) {
+                    fetch(`/taikhoan/admin/get-course/${mahocphan}`)
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                const course = data.course;
+                                // Fill form fields with course data
+                                document.getElementById('edit_mahocphan').value = course.mahocphan;
+                                document.getElementById('edit_tenhocphan').value = course.tenhocphan;
+                                document.getElementById('edit_khoa').value = course.khoa;
+                                document.getElementById('edit_hocki').value = course.hocki;
+                                document.getElementById('edit_loaihocphan').value = course.loaihocphan;
+                                document.getElementById('edit_sotinchi').value = course.sotinchi;
+                            } else {
+                                alert('Không thể tải thông tin học phần: ' + data.message);
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error loading course:', error);
+                            alert('Đã xảy ra lỗi khi tải thông tin học phần');
+                        });
+                };
+
+                // Function for handling force deletion
+                window.toggleForceDelete = function () {
+                    const isChecked = document.getElementById('forceDeleteCheck').checked;
+                    document.getElementById('forceDeleteConfirm').style.display = isChecked ? 'block' : 'none';
+                    document.getElementById('normalDeleteBtn').style.display = isChecked ? 'none' : 'inline-block';
+                    document.getElementById('forceDeleteForm').style.display = isChecked ? 'block' : 'none';
+                    document.getElementById('deleteCourseForm').style.display = isChecked ? 'none' : 'block';
+                }
+
+                // Set up delete course modal
+                const deleteCourseModal = document.getElementById('deleteCourseModal');
+                if (deleteCourseModal) {
+                    deleteCourseModal.addEventListener('show.bs.modal', function (event) {
+                        const button = event.relatedTarget;
+                        const courseId = button.getAttribute('data-course-id');
+                        const courseName = button.getAttribute('data-course-name');
+                        // Reset the form
+                        document.getElementById('deleteConfirmation').value = '';
+                        document.getElementById('forceDeleteCheck').checked = false;
+                        document.getElementById('forceDeleteConfirm').style.display = 'none';
+                        document.getElementById('normalDeleteBtn').style.display = 'inline-block';
+                        document.getElementById('forceDeleteForm').style.display = 'none';
+                        document.getElementById('deleteCourseForm').style.display = 'block';
+                        // Show force deletion option
+                        document.getElementById('forceDeletionSection').style.display = 'block';
+                        // Set course details
+                        document.getElementById('delete_mahocphan').value = courseId;
+                        document.getElementById('force_delete_mahocphan').value = courseId;
+                        document.getElementById('delete_course_name').textContent = courseName;
+                    });
+                    // Handle force delete form submission
+                    document.getElementById('forceDeleteForm').addEventListener('submit', function (e) {
+                        const confirmation = document.getElementById('deleteConfirmation').value;
+                        if (confirmation !== 'DELETE') {
+                            e.preventDefault();
+                            alert('Vui lòng nhập "DELETE" để xác nhận xóa');
+                            return false;
+                        }
+                        document.getElementById('force_delete_confirmation').value = confirmation;
+                        return true;
+                    });
+                }
+
+                // Set up activate registration modal
+                const activateRegistrationModal = document.getElementById('activateRegistrationModal');
+                if (activateRegistrationModal) {
+                    activateRegistrationModal.addEventListener('show.bs.modal', function (event) {
+                        const button = event.relatedTarget;
+                        const regId = button.getAttribute('data-reg-id');
+                        const courseId = button.getAttribute('data-course-id');
+                        const studentId = button.getAttribute('data-student-id');
+
+                        document.getElementById('activate_id').value = regId;
+                        document.getElementById('activate_mahocphan').value = courseId;
+                        document.getElementById('activate_student_id').textContent = studentId;
+                    });
+                }
+            });
+        </script>
+</body>
+
+</html>

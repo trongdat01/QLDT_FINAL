@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>
+        <%= title %>
+    </title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root {
+            --sidebar-width: 280px;
+            --topbar-height: 70px;
+            --primary-color: #4e73df;
+            --secondary-color: #f8f9fc;
+            --text-dark: #5a5c69;
+        }
+
+        body {
+            font-family: 'Nunito', sans-serif;
+            background-color: var(--secondary-color);
+            color: var(--text-dark);
+        }
+
+        .wrapper {
+            display: flex;
+            width: 100%;
+            align-items: stretch;
+        }
+
+        .sidebar {
+            min-width: var(--sidebar-width);
+            max-width: var(--sidebar-width);
+            background: var(--primary-color);
+            color: #fff;
+            transition: all 0.3s;
+            height: 100vh;
+            position: fixed;
+            z-index: 100;
+        }
+
+        .sidebar.collapsed {
+            margin-left: calc(-1 * var(--sidebar-width));
+        }
+
+        .sidebar .sidebar-header {
+            padding: 1.5rem 1rem;
+            text-align: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .sidebar .sidebar-header h3 {
+            margin: 0;
+            font-weight: 800;
+            font-size: 1.5rem;
+        }
+
+        .sidebar ul.components {
+            padding: 0;
+            margin: 0;
+        }
+
+        .sidebar ul li {
+            list-style: none;
+        }
+
+        .sidebar ul li a {
+            padding: 1rem 1.5rem;
+            display: block;
+            color: #fff;
+            text-decoration: none;
+            transition: all 0.3s;
+            font-weight: 500;
+        }
+
+        .sidebar ul li a:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .sidebar ul li a i {
+            margin-right: 10px;
+            width: 20px;
+            text-align: center;
+        }
+
+        .sidebar ul li.active a {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .sidebar ul.collapse {
+            background-color: rgba(0, 0, 0, 0.1);
+        }
+
+        .content {
+            width: 100%;
+            min-height: 100vh;
+            transition: all 0.3s;
+            margin-left: var(--sidebar-width);
+        }
+
+        .content.full-width {
+            margin-left: 0;
+        }
+
+        .topbar {
+            height: var(--topbar-height);
+            background: #fff;
+            box-shadow: 0 .15rem 1.75rem 0 rgba(58, 59, 69, .15);
+            display: flex;
+            align-items: center;
+            padding: 0 1rem;
+            position: fixed;
+            width: calc(100% - var(--sidebar-width));
+            z-index: 99;
+        }
+
+        .topbar.full-width {
+            width: 100%;
+        }
+
+        .topbar-nav {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            align-items: center;
+        }
+
+        .sidebar-toggle {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            color: var(--text-dark);
+            cursor: pointer;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+        }
+
+        .user-info img {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            margin-right: 10px;
+        }
+
+        .main-content {
+            padding: calc(var(--topbar-height) + 1.5rem) 1.5rem 1.5rem 1.5rem;
+        }
+
+        .card {
+            border: none;
+            box-shadow: 0 .15rem 1.75rem 0 rgba(58, 59, 69, .15);
+            border-radius: 0.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .card-header {
+            background-color: #f8f9fc;
+            border-bottom: 1px solid #e3e6f0;
+            padding: 0.75rem 1.25rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .card-header h5 {
+            margin: 0;
+            font-weight: 700;
+            color: #4e73df;
+        }
+
+        .btn-add {
+            background-color: #1cc88a;
+            color: white;
+        }
+
+        .btn-add:hover {
+            background-color: #169b6b;
+            color: white;
+        }
+
+        .table-responsive {
+            overflow-x: auto;
+        }
+
+        .table-hover tbody tr:hover {
+            background-color: rgba(0, 0, 0, 0.02);
+        }
+
+        .footer {
+            padding: 1.5rem;
+            text-align: center;
+            font-size: 0.9rem;
+            color: #858796;
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                margin-left: calc(-1 * var(--sidebar-width));
+            }
+
+            .sidebar.active {
+                margin-left: 0;
+            }
+
+            .content {
+                margin-left: 0;
+            }
+
+            .topbar {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="wrapper">
+        <!-- Sidebar -->
+        <nav id="sidebar" class="sidebar">
+            <div class="sidebar-header">
+                <h3>Quản lý Đào tạo</h3>
+            </div>
+
+            <ul class="components">
+                <li>
+                    <a href="/taikhoan/admin/dashboard"><i class="fas fa-tachometer-alt"></i> Bảng điều khiển</a>
+                </li>
+                <li class="active">
+                    <a href="#userSubmenu" data-bs-toggle="collapse" aria-expanded="true" class="dropdown-toggle">
+                        <i class="fas fa-users"></i> Quản lý người dùng
+                    </a>
+                    <ul class="collapse show list-unstyled" id="userSubmenu">
+                        <li class="active">
+                            <a href="/taikhoan/admin/manage-admins"><i class="fas fa-user-shield"></i> Quản trị viên</a>
+                        </li>
+                        <li>
+                            <a href="/taikhoan/admin/manage-students"><i class="fas fa-user-graduate"></i> Sinh viên</a>
+                        </li>
+                    </ul>
+                </li>
+                <li>
+                    <a href="/taikhoan/admin/manage-news"><i class="fas fa-newspaper"></i> Quản lý tin tức</a>
+                </li>
+                <li>
+                    <a href="#courseSubmenu" data-bs-toggle="collapse" aria-expanded="false" class="dropdown-toggle">
+                        <i class="fas fa-book"></i> Quản lý học phần
+                    </a>
+                    <ul class="collapse list-unstyled" id="courseSubmenu">
+                        <li>
+                            <a href="#"><i class="fas fa-list"></i> Danh sách học phần</a>
+                        </li>
+                        <li>
+                            <a href="#"><i class="fas fa-user-check"></i> Đăng ký học phần</a>
+                        </li>
+                    </ul>
+                </li>
+                <li>
+                    <a href="#"><i class="fas fa-clipboard-list"></i> Quản lý điểm</a>
+                </li>
+                <li>
+                    <a href="#scheduleSubmenu" data-bs-toggle="collapse" aria-expanded="false" class="dropdown-toggle">
+                        <i class="fas fa-calendar-alt"></i> Lịch học - Lịch thi
+                    </a>
+                    <ul class="collapse list-unstyled" id="scheduleSubmenu">
+                        <li>
+                            <a href="#"><i class="fas fa-calendar-day"></i> Lịch học</a>
+                        </li>
+                        <li>
+                            <a href="#"><i class="fas fa-calendar-check"></i> Lịch thi</a>
+                        </li>
+                    </ul>
+                </li>
+                <li>
+                    <a href="#"><i class="fas fa-money-bill-wave"></i> Quản lý tài chính</a>
+                </li>
+                <li>
+                    <a href="#"><i class="fas fa-cog"></i> Cài đặt hệ thống</a>
+                </li>
+                <li>
+                    <a href="/taikhoan/dang-xuat"><i class="fas fa-sign-out-alt"></i> Đăng xuất</a>
+                </li>
+            </ul>
+        </nav>
+
+        <!-- Page Content -->
+        <div id="content" class="content">
+            <nav class="topbar">
+                <div class="topbar-nav">
+                    <button type="button" id="sidebarCollapse" class="sidebar-toggle">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                    <div class="user-info">
+                        <img src="/images/default-avatar.png" alt="Admin Avatar">
+                        <div>
+                            <span>Xin chào, Admin</span>
+                            <div class="small">
+                                <%= user.email %>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </nav>
+
+            <div class="main-content">
+                <div class="container-fluid">
+                    <h1 class="h3 mb-4 text-gray-800">Quản lý Quản trị viên</h1>
+
+                    <% if (typeof success !=='undefined' && success) { %>
+                        <div class="alert alert-success" role="alert">
+                            <%= success %>
+                        </div>
+                        <% } %>
+
+                            <% if (typeof error !=='undefined' && error) { %>
+                                <div class="alert alert-danger" role="alert">
+                                    <%= error %>
+                                </div>
+                                <% } %>
+
+                                    <div class="card shadow mb-4">
+                                        <div class="card-header">
+                                            <h5>Danh sách quản trị viên</h5>
+                                            <button type="button" class="btn btn-add" data-bs-toggle="modal"
+                                                data-bs-target="#addAdminModal">
+                                                <i class="fas fa-plus"></i> Thêm Quản trị viên
+                                            </button>
+                                        </div>
+                                        <div class="card-body">
+                                            <div class="table-responsive">
+                                                <table class="table table-hover">
+                                                    <thead class="table-light">
+                                                        <tr>
+                                                            <th>ID</th>
+                                                            <th>Email</th>
+                                                            <th>Vai trò</th>
+                                                            <th>Ngày tạo</th>
+                                                            <th>Ngày cập nhật</th>
+                                                            <th>Thao tác</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        <% if (admins && admins.length> 0) { %>
+                                                            <% admins.forEach(admin=> { %>
+                                                                <tr>
+                                                                    <td>
+                                                                        <%= admin.id %>
+                                                                    </td>
+                                                                    <td>
+                                                                        <%= admin.email %>
+                                                                    </td>
+                                                                    <td><span class="badge bg-primary">
+                                                                            <%= admin.vaitro %>
+                                                                        </span></td>
+                                                                    <td>
+                                                                        <%= admin.created_at ? new
+                                                                            Date(admin.created_at).toLocaleString()
+                                                                            : 'N/A' %>
+                                                                    </td>
+                                                                    <td>
+                                                                        <%= admin.updated_at ? new
+                                                                            Date(admin.updated_at).toLocaleString()
+                                                                            : 'N/A' %>
+                                                                    </td>
+                                                                    <td>
+                                                                        <% if (user.id==admin.id) { %>
+                                                                            <span class="text-muted">Tài khoản hiện
+                                                                                tại</span>
+                                                                            <% } else { %>
+                                                                                <button type="button"
+                                                                                    class="btn btn-sm btn-danger"
+                                                                                    data-bs-toggle="modal"
+                                                                                    data-bs-target="#deleteAdminModal"
+                                                                                    data-admin-id="<%= admin.id %>"
+                                                                                    data-admin-email="<%= admin.email %>">
+                                                                                    <i class="fas fa-trash"></i> Xóa
+                                                                                </button>
+                                                                                <% } %>
+                                                                    </td>
+                                                                </tr>
+                                                                <% }); %>
+                                                                    <% } else { %>
+                                                                        <tr>
+                                                                            <td colspan="6" class="text-center">Không có
+                                                                                dữ liệu quản trị viên</td>
+                                                                        </tr>
+                                                                        <% } %>
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </div>
+                </div>
+            </div>
+
+            <footer class="footer">
+                <div class="container">
+                    <span>© 2023 Hệ thống Quản lý Đào tạo Đại học. All rights reserved.</span>
+                </div>
+            </footer>
+        </div>
+    </div>
+
+    <!-- Add Admin Modal -->
+    <div class="modal fade" id="addAdminModal" tabindex="-1" aria-labelledby="addAdminModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title" id="addAdminModalLabel">Thêm quản trị viên mới</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                        aria-label="Close"></button>
+                </div>
+                <form action="/taikhoan/admin/add-admin" method="POST">
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label for="email" class="form-label">Email <span class="text-danger">*</span></label>
+                            <input type="email" class="form-control" id="email" name="email" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="matkhau" class="form-label">Mật khẩu <span class="text-danger">*</span></label>
+                            <input type="password" class="form-control" id="matkhau" name="matkhau" required>
+                            <div class="form-text">Mật khẩu phải có ít nhất 6 ký tự.</div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="xacnhan_matkhau" class="form-label">Xác nhận mật khẩu <span
+                                    class="text-danger">*</span></label>
+                            <input type="password" class="form-control" id="xacnhan_matkhau" name="xacnhan_matkhau"
+                                required>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                        <button type="submit" class="btn btn-primary">Thêm mới</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Admin Modal -->
+    <div class="modal fade" id="deleteAdminModal" tabindex="-1" aria-labelledby="deleteAdminModalLabel"
+        aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title" id="deleteAdminModalLabel">Xác nhận xóa quản trị viên</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                        aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Bạn có chắc chắn muốn xóa quản trị viên <strong id="deleteAdminEmail"></strong> không?</p>
+                    <p class="text-danger">Lưu ý: Thao tác này không thể hoàn tác!</p>
+                </div>
+                <div class="modal-footer">
+                    <form action="/taikhoan/admin/delete-admin" method="POST">
+                        <input type="hidden" id="deleteAdminId" name="adminId">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                        <button type="submit" class="btn btn-danger">Xóa</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // Toggle sidebar
+            document.getElementById('sidebarCollapse').addEventListener('click', function () {
+                document.getElementById('sidebar').classList.toggle('collapsed');
+                document.getElementById('content').classList.toggle('full-width');
+                document.querySelector('.topbar').classList.toggle('full-width');
+            });
+
+            // Set delete admin modal data
+            const deleteAdminModal = document.getElementById('deleteAdminModal');
+            if (deleteAdminModal) {
+                deleteAdminModal.addEventListener('show.bs.modal', function (event) {
+                    const button = event.relatedTarget;
+                    const adminId = button.getAttribute('data-admin-id');
+                    const adminEmail = button.getAttribute('data-admin-email');
+
+                    document.getElementById('deleteAdminId').value = adminId;
+                    document.getElementById('deleteAdminEmail').textContent = adminEmail;
+                });
+            }
+        });
+    </script>
+</body>
+
+</html>

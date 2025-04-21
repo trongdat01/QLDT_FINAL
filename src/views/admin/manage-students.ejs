@@ -1,0 +1,806 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>
+        <%= title %>
+    </title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root {
+            --sidebar-width: 280px;
+            --topbar-height: 70px;
+            --primary-color: #4e73df;
+            --secondary-color: #f8f9fc;
+            --text-dark: #5a5c69;
+        }
+
+        body {
+            font-family: 'Nunito', sans-serif;
+            background-color: var(--secondary-color);
+            color: var(--text-dark);
+        }
+
+        .wrapper {
+            display: flex;
+            width: 100%;
+            align-items: stretch;
+        }
+
+        .sidebar {
+            min-width: var(--sidebar-width);
+            max-width: var(--sidebar-width);
+            background: var(--primary-color);
+            color: #fff;
+            transition: all 0.3s;
+            height: 100vh;
+            position: fixed;
+            z-index: 100;
+        }
+
+        .sidebar.collapsed {
+            margin-left: calc(-1 * var(--sidebar-width));
+        }
+
+        .sidebar .sidebar-header {
+            padding: 1.5rem 1rem;
+            text-align: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .sidebar .sidebar-header h3 {
+            margin: 0;
+            font-weight: 800;
+            font-size: 1.5rem;
+        }
+
+        .sidebar ul.components {
+            padding: 0;
+            margin: 0;
+        }
+
+        .sidebar ul li {
+            list-style: none;
+        }
+
+        .sidebar ul li a {
+            padding: 1rem 1.5rem;
+            display: block;
+            color: #fff;
+            text-decoration: none;
+            transition: all 0.3s;
+            font-weight: 500;
+        }
+
+        .sidebar ul li a:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .sidebar ul li a i {
+            margin-right: 10px;
+            width: 20px;
+            text-align: center;
+        }
+
+        .sidebar ul li.active a {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .sidebar ul.collapse {
+            background-color: rgba(0, 0, 0, 0.1);
+        }
+
+        .content {
+            width: 100%;
+            min-height: 100vh;
+            transition: all 0.3s;
+            margin-left: var(--sidebar-width);
+        }
+
+        .content.full-width {
+            margin-left: 0;
+        }
+
+        .topbar {
+            height: var(--topbar-height);
+            background: #fff;
+            box-shadow: 0 .15rem 1.75rem 0 rgba(58, 59, 69, .15);
+            display: flex;
+            align-items: center;
+            padding: 0 1rem;
+            position: fixed;
+            width: calc(100% - var(--sidebar-width));
+            z-index: 99;
+        }
+
+        .topbar.full-width {
+            width: 100%;
+        }
+
+        .topbar-nav {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            align-items: center;
+        }
+
+        .sidebar-toggle {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            color: var(--text-dark);
+            cursor: pointer;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+        }
+
+        .user-info img {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            margin-right: 10px;
+        }
+
+        .main-content {
+            padding: calc(var(--topbar-height) + 1.5rem) 1.5rem 1.5rem 1.5rem;
+        }
+
+        .card {
+            border: none;
+            box-shadow: 0 .15rem 1.75rem 0 rgba(58, 59, 69, .15);
+            border-radius: 0.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .card-header {
+            background-color: #f8f9fc;
+            border-bottom: 1px solid #e3e6f0;
+            padding: 0.75rem 1.25rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .card-header h5 {
+            margin: 0;
+            font-weight: 700;
+            color: #4e73df;
+        }
+
+        .btn-add {
+            background-color: #1cc88a;
+            color: white;
+        }
+
+        .btn-add:hover {
+            background-color: #169b6b;
+            color: white;
+        }
+
+        .table-responsive {
+            overflow-x: auto;
+        }
+
+        .table-hover tbody tr:hover {
+            background-color: rgba(0, 0, 0, 0.02);
+        }
+
+        .footer {
+            padding: 1.5rem;
+            text-align: center;
+            font-size: 0.9rem;
+            color: #858796;
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                margin-left: calc(-1 * var(--sidebar-width));
+            }
+
+            .sidebar.active {
+                margin-left: 0;
+            }
+
+            .content {
+                margin-left: 0;
+            }
+
+            .topbar {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="wrapper">
+        <!-- Sidebar -->
+        <nav id="sidebar" class="sidebar">
+            <div class="sidebar-header">
+                <h3>Quản lý Đào tạo</h3>
+            </div>
+
+            <ul class="components">
+                <li>
+                    <a href="/taikhoan/admin/dashboard"><i class="fas fa-tachometer-alt"></i> Bảng điều khiển</a>
+                </li>
+                <li class="active">
+                    <a href="#userSubmenu" data-bs-toggle="collapse" aria-expanded="true" class="dropdown-toggle">
+                        <i class="fas fa-users"></i> Quản lý người dùng
+                    </a>
+                    <ul class="collapse show list-unstyled" id="userSubmenu">
+                        <li>
+                            <a href="/taikhoan/admin/manage-admins"><i class="fas fa-user-shield"></i> Quản trị viên</a>
+                        </li>
+                        <li class="active">
+                            <a href="/taikhoan/admin/manage-students"><i class="fas fa-user-graduate"></i> Sinh viên</a>
+                        </li>
+                    </ul>
+                </li>
+                <li>
+                    <a href="/taikhoan/admin/manage-news"><i class="fas fa-newspaper"></i> Quản lý tin tức</a>
+                </li>
+                <li>
+                    <a href="#courseSubmenu" data-bs-toggle="collapse" aria-expanded="false" class="dropdown-toggle">
+                        <i class="fas fa-book"></i> Quản lý học phần
+                    </a>
+                    <ul class="collapse list-unstyled" id="courseSubmenu">
+                        <li>
+                            <a href="#"><i class="fas fa-list"></i> Danh sách học phần</a>
+                        </li>
+                        <li>
+                            <a href="#"><i class="fas fa-user-check"></i> Đăng ký học phần</a>
+                        </li>
+                    </ul>
+                </li>
+                <li>
+                    <a href="#"><i class="fas fa-clipboard-list"></i> Quản lý điểm</a>
+                </li>
+                <li>
+                    <a href="#scheduleSubmenu" data-bs-toggle="collapse" aria-expanded="false" class="dropdown-toggle">
+                        <i class="fas fa-calendar-alt"></i> Lịch học - Lịch thi
+                    </a>
+                    <ul class="collapse list-unstyled" id="scheduleSubmenu">
+                        <li>
+                            <a href="#"><i class="fas fa-calendar-day"></i> Lịch học</a>
+                        </li>
+                        <li>
+                            <a href="#"><i class="fas fa-calendar-check"></i> Lịch thi</a>
+                        </li>
+                    </ul>
+                </li>
+                <li>
+                    <a href="#"><i class="fas fa-money-bill-wave"></i> Quản lý tài chính</a>
+                </li>
+                <li>
+                    <a href="#"><i class="fas fa-cog"></i> Cài đặt hệ thống</a>
+                </li>
+                <li>
+                    <a href="/taikhoan/dang-xuat"><i class="fas fa-sign-out-alt"></i> Đăng xuất</a>
+                </li>
+            </ul>
+        </nav>
+
+        <!-- Page Content -->
+        <div id="content" class="content">
+            <nav class="topbar">
+                <div class="topbar-nav">
+                    <button type="button" id="sidebarCollapse" class="sidebar-toggle">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                    <div class="user-info">
+                        <img src="/images/default-avatar.png" alt="Admin Avatar">
+                        <div>
+                            <span>Xin chào, Admin</span>
+                            <div class="small">
+                                <%= user.email %>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </nav>
+
+            <div class="main-content">
+                <div class="container-fluid">
+                    <h1 class="h3 mb-4 text-gray-800">Quản lý Sinh viên</h1>
+
+                    <% if (typeof success !=='undefined' && success) { %>
+                        <div class="alert alert-success" role="alert">
+                            <%= success %>
+                        </div>
+                        <% } %>
+
+                            <% if (typeof error !=='undefined' && error) { %>
+                                <div class="alert alert-danger" role="alert">
+                                    <%= error %>
+                                </div>
+                                <% } %>
+
+                                    <div class="card shadow mb-4">
+                                        <div class="card-header">
+                                            <h5>Danh sách sinh viên</h5>
+                                            <button type="button" class="btn btn-add" data-bs-toggle="modal"
+                                                data-bs-target="#addStudentModal">
+                                                <i class="fas fa-plus"></i> Thêm Sinh viên
+                                            </button>
+                                        </div>
+                                        <div class="card-body">
+                                            <div class="table-responsive">
+                                                <table class="table table-hover">
+                                                    <thead class="table-light">
+                                                        <tr>
+                                                            <th>MSV</th>
+                                                            <th>Họ và tên</th>
+                                                            <th>Email</th>
+                                                            <th>SĐT</th>
+                                                            <th>Khoa</th>
+                                                            <th>Niên khóa</th>
+                                                            <th>Thao tác</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <!-- Update the table row with edit button -->
+                                                    <tbody>
+                                                        <% if (students && students.length> 0) { %>
+                                                            <% students.forEach(student=> { %>
+                                                                <tr>
+                                                                    <td>
+                                                                        <%= student.msv %>
+                                                                    </td>
+                                                                    <td>
+                                                                        <%= student.hovaten %>
+                                                                    </td>
+                                                                    <td>
+                                                                        <%= student.email %>
+                                                                    </td>
+                                                                    <td>
+                                                                        <%= student.sodienthoai || 'N/A' %>
+                                                                    </td>
+                                                                    <td>
+                                                                        <%= student.khoa %>
+                                                                    </td>
+                                                                    <td>
+                                                                        <%= student.nienkhoa %>
+                                                                    </td>
+                                                                    <td>
+                                                                        <button type="button"
+                                                                            class="btn btn-sm btn-info"
+                                                                            data-bs-toggle="modal"
+                                                                            data-bs-target="#viewStudentModal"
+                                                                            data-student-id="<%= student.msv %>"
+                                                                            data-student-name="<%= student.hovaten %>"
+                                                                            data-student-email="<%= student.email %>"
+                                                                            data-student-phone="<%= student.sodienthoai || 'N/A' %>"
+                                                                            data-student-dept="<%= student.khoa %>"
+                                                                            data-student-year="<%= student.nienkhoa %>"
+                                                                            data-student-gender="<%= student.gioitinh || 'N/A' %>"
+                                                                            data-student-dob="<%= student.ngaysinh ? new Date(student.ngaysinh).toLocaleDateString() : 'N/A' %>">
+                                                                            <i class="fas fa-eye"></i>
+                                                                        </button>
+                                                                        <button type="button"
+                                                                            class="btn btn-sm btn-warning"
+                                                                            onclick="loadStudentForEdit('<%= student.msv %>')"
+                                                                            data-bs-toggle="modal"
+                                                                            data-bs-target="#editStudentModal">
+                                                                            <i class="fas fa-edit"></i>
+                                                                        </button>
+                                                                        <button type="button"
+                                                                            class="btn btn-sm btn-danger"
+                                                                            data-bs-toggle="modal"
+                                                                            data-bs-target="#deleteStudentModal"
+                                                                            data-student-id="<%= student.msv %>"
+                                                                            data-student-name="<%= student.hovaten %>">
+                                                                            <i class="fas fa-trash"></i>
+                                                                        </button>
+                                                                    </td>
+                                                                </tr>
+                                                                <% }); %>
+                                                                    <% } else { %>
+                                                                        <tr>
+                                                                            <td colspan="7" class="text-center">Không có
+                                                                                dữ liệu sinh viên</td>
+                                                                        </tr>
+                                                                        <% } %>
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </div>
+                </div>
+            </div>
+
+            <footer class="footer">
+                <div class="container">
+                    <span>© 2023 Hệ thống Quản lý Đào tạo Đại học. All rights reserved.</span>
+                </div>
+            </footer>
+        </div>
+    </div>
+
+    <!-- Add Student Modal -->
+    <div class="modal fade" id="addStudentModal" tabindex="-1" aria-labelledby="addStudentModalLabel"
+        aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header bg-success text-white">
+                    <h5 class="modal-title" id="addStudentModalLabel">Thêm sinh viên mới</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                        aria-label="Close"></button>
+                </div>
+                <form action="/taikhoan/admin/add-student" method="POST">
+                    <div class="modal-body">
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="msv" class="form-label">Mã sinh viên <span
+                                        class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="msv" name="msv" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="hovaten" class="form-label">Họ và tên <span
+                                        class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="hovaten" name="hovaten" required>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="email" class="form-label">Email <span class="text-danger">*</span></label>
+                                <input type="email" class="form-control" id="email" name="email" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="sodienthoai" class="form-label">Số điện thoại</label>
+                                <input type="text" class="form-control" id="sodienthoai" name="sodienthoai">
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="khoa" class="form-label">Khoa <span class="text-danger">*</span></label>
+                                <select class="form-select" id="khoa" name="khoa" required>
+                                    <option value="" selected disabled>Chọn khoa</option>
+                                    <option value="Công nghệ thông tin">Công nghệ thông tin</option>
+                                    <option value="Kinh tế">Kinh tế</option>
+                                    <option value="Ngoại ngữ">Ngoại ngữ</option>
+                                    <option value="Kỹ thuật">Kỹ thuật</option>
+                                    <option value="Y dược">Y dược</option>
+                                    <option value="Luật">Luật</option>
+                                    <option value="Xây dựng">Xây dựng</option>
+                                    <option value="Sư phạm">Sư phạm</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="nienkhoa" class="form-label">Niên khóa <span
+                                        class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="nienkhoa" name="nienkhoa"
+                                    placeholder="VD: 2022-2026" required>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="gioitinh" class="form-label">Giới tính</label>
+                                <select class="form-select" id="gioitinh" name="gioitinh">
+                                    <option value="" selected>Chọn giới tính</option>
+                                    <option value="Nam">Nam</option>
+                                    <option value="Nữ">Nữ</option>
+                                    <option value="Khác">Khác</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="ngaysinh" class="form-label">Ngày sinh</label>
+                                <input type="date" class="form-control" id="ngaysinh" name="ngaysinh">
+                            </div>
+                        </div>
+
+                        <hr>
+                        <h6 class="mb-3">Thông tin tài khoản</h6>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="matkhau" class="form-label">Mật khẩu <span
+                                        class="text-danger">*</span></label>
+                                <input type="password" class="form-control" id="matkhau" name="matkhau" required>
+                                <div class="form-text">Mật khẩu phải có ít nhất 6 ký tự.</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="xacnhan_matkhau" class="form-label">Xác nhận mật khẩu <span
+                                        class="text-danger">*</span></label>
+                                <input type="password" class="form-control" id="xacnhan_matkhau" name="xacnhan_matkhau"
+                                    required>
+                            </div>
+                        </div>
+
+                        <div class="mt-3">
+                            <p class="text-danger mb-0"><small>(*) Thông tin bắt buộc</small></p>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                        <button type="submit" class="btn btn-success">Thêm mới</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- View Student Modal -->
+    <div class="modal fade" id="viewStudentModal" tabindex="-1" aria-labelledby="viewStudentModalLabel"
+        aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-info text-white">
+                    <h5 class="modal-title" id="viewStudentModalLabel">Thông tin sinh viên</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                        aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="text-center mb-4">
+                        <img src="/images/default-avatar.png" alt="Student Avatar" class="rounded-circle"
+                            style="width: 100px; height: 100px;">
+                        <h5 class="mt-2" id="studentName"></h5>
+                        <span class="badge bg-primary" id="studentId"></span>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <p class="mb-1 text-muted">Email:</p>
+                            <p class="fw-bold" id="studentEmail"></p>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <p class="mb-1 text-muted">Số điện thoại:</p>
+                            <p class="fw-bold" id="studentPhone"></p>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <p class="mb-1 text-muted">Khoa:</p>
+                            <p class="fw-bold" id="studentDept"></p>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <p class="mb-1 text-muted">Niên khóa:</p>
+                            <p class="fw-bold" id="studentYear"></p>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <p class="mb-1 text-muted">Giới tính:</p>
+                            <p class="fw-bold" id="studentGender"></p>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <p class="mb-1 text-muted">Ngày sinh:</p>
+                            <p class="fw-bold" id="studentDob"></p>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Student Modal -->
+    <div class="modal fade" id="deleteStudentModal" tabindex="-1" aria-labelledby="deleteStudentModalLabel"
+        aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title" id="deleteStudentModalLabel">Xác nhận xóa sinh viên</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                        aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Bạn có chắc chắn muốn xóa sinh viên <strong id="deleteStudentName"></strong> không?</p>
+                    <p class="text-danger">Lưu ý: Thao tác này không thể hoàn tác!</p>
+                </div>
+                <div class="modal-footer">
+                    <form action="/taikhoan/admin/delete-student" method="POST">
+                        <input type="hidden" id="deleteStudentId" name="studentMsv">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                        <button type="submit" class="btn btn-danger">Xóa</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Edit Student Modal -->
+    <div class="modal fade" id="editStudentModal" tabindex="-1" aria-labelledby="editStudentModalLabel"
+        aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header bg-warning text-white">
+                    <h5 class="modal-title" id="editStudentModalLabel">Chỉnh sửa thông tin sinh viên</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                        aria-label="Close"></button>
+                </div>
+                <form action="/taikhoan/admin/edit-student" method="POST">
+                    <div class="modal-body">
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="edit_msv" class="form-label">Mã sinh viên <span
+                                        class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="edit_msv" name="msv" readonly required>
+                                <small class="text-muted">Mã sinh viên không thể thay đổi</small>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="edit_hovaten" class="form-label">Họ và tên <span
+                                        class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="edit_hovaten" name="hovaten" required>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="edit_email" class="form-label">Email <span
+                                        class="text-danger">*</span></label>
+                                <input type="email" class="form-control" id="edit_email" name="email" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="edit_sodienthoai" class="form-label">Số điện thoại</label>
+                                <input type="text" class="form-control" id="edit_sodienthoai" name="sodienthoai">
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="edit_khoa" class="form-label">Khoa <span
+                                        class="text-danger">*</span></label>
+                                <select class="form-select" id="edit_khoa" name="khoa" required>
+                                    <option value="" disabled>Chọn khoa</option>
+                                    <option value="Công nghệ thông tin">Công nghệ thông tin</option>
+                                    <option value="Kinh tế">Kinh tế</option>
+                                    <option value="Ngoại ngữ">Ngoại ngữ</option>
+                                    <option value="Kỹ thuật">Kỹ thuật</option>
+                                    <option value="Y dược">Y dược</option>
+                                    <option value="Luật">Luật</option>
+                                    <option value="Xây dựng">Xây dựng</option>
+                                    <option value="Sư phạm">Sư phạm</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="edit_nienkhoa" class="form-label">Niên khóa <span
+                                        class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="edit_nienkhoa" name="nienkhoa"
+                                    placeholder="VD: 2022-2026" required>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="edit_gioitinh" class="form-label">Giới tính</label>
+                                <select class="form-select" id="edit_gioitinh" name="gioitinh">
+                                    <option value="">Chọn giới tính</option>
+                                    <option value="Nam">Nam</option>
+                                    <option value="Nữ">Nữ</option>
+                                    <option value="Khác">Khác</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="edit_ngaysinh" class="form-label">Ngày sinh</label>
+                                <input type="date" class="form-control" id="edit_ngaysinh" name="ngaysinh">
+                            </div>
+                        </div>
+
+                        <hr>
+                        <h6 class="mb-3">Thay đổi mật khẩu (để trống nếu không đổi)</h6>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="edit_matkhau" class="form-label">Mật khẩu mới</label>
+                                <input type="password" class="form-control" id="edit_matkhau" name="matkhau">
+                                <div class="form-text">Mật khẩu phải có ít nhất 6 ký tự.</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="edit_xacnhan_matkhau" class="form-label">Xác nhận mật khẩu mới</label>
+                                <input type="password" class="form-control" id="edit_xacnhan_matkhau"
+                                    name="xacnhan_matkhau">
+                            </div>
+                        </div>
+
+                        <div class="mt-3">
+                            <p class="text-danger mb-0"><small>(*) Thông tin bắt buộc</small></p>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                        <button type="submit" class="btn btn-warning">Cập nhật</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // Toggle sidebar
+            document.getElementById('sidebarCollapse').addEventListener('click', function () {
+                document.getElementById('sidebar').classList.toggle('collapsed');
+                document.getElementById('content').classList.toggle('full-width');
+                document.querySelector('.topbar').classList.toggle('full-width');
+            });
+
+            // Set view student modal data
+            const viewStudentModal = document.getElementById('viewStudentModal');
+            if (viewStudentModal) {
+                viewStudentModal.addEventListener('show.bs.modal', function (event) {
+                    const button = event.relatedTarget;
+
+                    // Update student details in modal
+                    document.getElementById('studentName').textContent = button.getAttribute('data-student-name');
+                    document.getElementById('studentId').textContent = button.getAttribute('data-student-id');
+                    document.getElementById('studentEmail').textContent = button.getAttribute('data-student-email');
+                    document.getElementById('studentPhone').textContent = button.getAttribute('data-student-phone');
+                    document.getElementById('studentDept').textContent = button.getAttribute('data-student-dept');
+                    document.getElementById('studentYear').textContent = button.getAttribute('data-student-year');
+                    document.getElementById('studentGender').textContent = button.getAttribute('data-student-gender');
+                    document.getElementById('studentDob').textContent = button.getAttribute('data-student-dob');
+                });
+            }
+
+            // Set delete student modal data
+            const deleteStudentModal = document.getElementById('deleteStudentModal');
+            if (deleteStudentModal) {
+                deleteStudentModal.addEventListener('show.bs.modal', function (event) {
+                    const button = event.relatedTarget;
+                    const studentId = button.getAttribute('data-student-id');
+                    const studentName = button.getAttribute('data-student-name');
+
+                    document.getElementById('deleteStudentId').value = studentId;
+                    document.getElementById('deleteStudentName').textContent = studentName;
+                });
+            }
+
+            // Add function to load student details for editing
+            window.loadStudentForEdit = function (msv) {
+                fetch(`/taikhoan/admin/get-student/${msv}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            const student = data.student;
+
+                            // Fill form fields with student data
+                            document.getElementById('edit_msv').value = student.msv;
+                            document.getElementById('edit_hovaten').value = student.hovaten;
+                            document.getElementById('edit_email').value = student.email;
+                            document.getElementById('edit_sodienthoai').value = student.sodienthoai || '';
+                            document.getElementById('edit_khoa').value = student.khoa;
+                            document.getElementById('edit_nienkhoa').value = student.nienkhoa;
+                            document.getElementById('edit_gioitinh').value = student.gioitinh || '';
+
+                            // Format date for input field (YYYY-MM-DD)
+                            if (student.ngaysinh) {
+                                const date = new Date(student.ngaysinh);
+                                const year = date.getFullYear();
+                                const month = (date.getMonth() + 1).toString().padStart(2, '0');
+                                const day = date.getDate().toString().padStart(2, '0');
+                                document.getElementById('edit_ngaysinh').value = `${year}-${month}-${day}`;
+                            } else {
+                                document.getElementById('edit_ngaysinh').value = '';
+                            }
+
+                            // Clear password fields
+                            document.getElementById('edit_matkhau').value = '';
+                            document.getElementById('edit_xacnhan_matkhau').value = '';
+                        } else {
+                            alert('Không thể tải thông tin sinh viên: ' + data.message);
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error loading student:', error);
+                        alert('Đã xảy ra lỗi khi tải thông tin sinh viên');
+                    });
+            };
+        });
+    </script>
+</body>
+
+</html>
