@@ -234,6 +234,21 @@
                 width: 100%;
             }
         }
+
+        .dashboard-card {
+            transition: transform 0.3s;
+            margin-bottom: 20px;
+        }
+
+        .dashboard-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .dashboard-icon {
+            font-size: 3rem;
+            margin-bottom: 15px;
+            color: #0d6efd;
+        }
     </style>
 </head>
 
@@ -354,6 +369,92 @@
                                 <p>Lịch thi</p>
                             </div>
                             <i class="fas fa-calendar-check"></i>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-3">
+                            <div class="card dashboard-card text-center h-100">
+                                <div class="card-body">
+                                    <i class="bi bi-people-fill dashboard-icon"></i>
+                                    <h5 class="card-title">Quản lý Admin</h5>
+                                    <p class="card-text">Thêm, sửa, xóa tài khoản quản trị viên</p>
+                                    <a href="/taikhoan/admin/manage-admins" class="btn btn-primary">Truy cập</a>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card dashboard-card text-center h-100">
+                                <div class="card-body">
+                                    <i class="bi bi-mortarboard-fill dashboard-icon"></i>
+                                    <h5 class="card-title">Quản lý Sinh viên</h5>
+                                    <p class="card-text">Thêm, sửa, xóa thông tin sinh viên</p>
+                                    <a href="/taikhoan/admin/manage-students" class="btn btn-primary">Truy cập</a>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card dashboard-card text-center h-100">
+                                <div class="card-body">
+                                    <i class="bi bi-book-fill dashboard-icon"></i>
+                                    <h5 class="card-title">Quản lý Học phần</h5>
+                                    <p class="card-text">Quản lý học phần và đăng ký học phần</p>
+                                    <a href="/taikhoan/admin/manage-courses" class="btn btn-primary">Truy cập</a>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card dashboard-card text-center h-100">
+                                <div class="card-body">
+                                    <i class="bi bi-star-fill dashboard-icon"></i>
+                                    <h5 class="card-title">Quản lý Điểm</h5>
+                                    <p class="card-text">Quản lý điểm số của sinh viên</p>
+                                    <a href="/taikhoan/admin/manage-grades" class="btn btn-primary">Truy cập</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row mt-4">
+                        <div class="col-md-3">
+                            <div class="card dashboard-card text-center h-100">
+                                <div class="card-body">
+                                    <i class="bi bi-newspaper dashboard-icon"></i>
+                                    <h5 class="card-title">Quản lý Tin tức</h5>
+                                    <p class="card-text">Thêm, sửa, xóa tin tức trên trang web</p>
+                                    <a href="/taikhoan/admin/manage-news" class="btn btn-primary">Truy cập</a>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card dashboard-card text-center h-100">
+                                <div class="card-body">
+                                    <i class="bi bi-bar-chart-fill dashboard-icon"></i>
+                                    <h5 class="card-title">Thống kê Điểm</h5>
+                                    <p class="card-text">Xem thống kê điểm theo lớp, khoa, môn học</p>
+                                    <a href="/taikhoan/admin/grade-statistics" class="btn btn-primary">Truy cập</a>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card dashboard-card text-center h-100">
+                                <div class="card-body">
+                                    <i class="bi bi-file-earmark-spreadsheet-fill dashboard-icon"></i>
+                                    <h5 class="card-title">Báo cáo</h5>
+                                    <p class="card-text">Tạo báo cáo tổng hợp về kết quả học tập</p>
+                                    <a href="/taikhoan/admin/reports" class="btn btn-primary">Truy cập</a>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card dashboard-card text-center h-100">
+                                <div class="card-body">
+                                    <i class="bi bi-gear-fill dashboard-icon"></i>
+                                    <h5 class="card-title">Cài đặt Hệ thống</h5>
+                                    <p class="card-text">Quản lý cài đặt và cấu hình hệ thống</p>
+                                    <a href="/taikhoan/admin/settings" class="btn btn-primary">Truy cập</a>
+                                </div>
+                            </div>
                         </div>
                     </div>
 

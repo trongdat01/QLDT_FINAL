@@ -1654,6 +1654,391 @@ router.get('/admin/create-test-registration', async (req, res) => {
     }
 });
 
+// Grade management page
+router.get('/admin/manage-grades', async (req, res) => {
+    try {
+        if (!req.session.user || req.session.user.vaitro !== 'admin') {
+            return res.redirect('/taikhoan/dang-nhap?error=Vui lòng đăng nhập với tài khoản admin');
+        }
+
+        console.log('Fetching grades for admin:', req.session.user.email);
+
+        // Fetch all courses for dropdown
+        const courses = await sequelize.query(
+            'SELECT * FROM dangkyhocphan ORDER BY mahocphan',
+            {
+                type: sequelize.QueryTypes.SELECT
+            }
+        );
+
+        // Fetch all students for dropdown
+        const students = await sequelize.query(
+            'SELECT msv, hovaten FROM sinhvien ORDER BY hovaten',
+            {
+                type: sequelize.QueryTypes.SELECT
+            }
+        );
+
+        // Fetch grades with course and student details
+        const grades = await sequelize.query(
+            `SELECT d.*, s.hovaten, c.tenhocphan 
+             FROM diem d
+             JOIN sinhvien s ON d.msv = s.msv
+             JOIN dangkyhocphan c ON d.hocphan = c.mahocphan
+             ORDER BY d.hocki DESC, d.msv ASC`,
+            {
+                type: sequelize.QueryTypes.SELECT
+            }
+        );
+
+        console.log(`Fetched ${grades.length} grade records`);
+
+        return res.render('admin/manage-grades', {
+            title: 'Quản lý Điểm',
+            user: req.session.user,
+            courses: courses || [],
+            students: students || [],
+            grades: grades || [],
+            error: req.query.error,
+            success: req.query.success
+        });
+    } catch (error) {
+        console.error('Fetch grades error:', error);
+        return res.status(500).send('Đã xảy ra lỗi khi tải trang: ' + error.message);
+    }
+});
+
+// Add new grade
+router.post('/admin/add-grade', async (req, res) => {
+    try {
+        if (!req.session.user || req.session.user.vaitro !== 'admin') {
+            return res.redirect('/taikhoan/dang-nhap?error=Vui lòng đăng nhập với tài khoản admin');
+        }
+
+        const { msv, hocphan, hocki, diemquatrinh, diemthi } = req.body;
+
+        // Basic validation
+        if (!msv || !hocphan || !hocki) {
+            return res.redirect('/taikhoan/admin/manage-grades?error=Vui lòng điền đầy đủ thông tin bắt buộc');
+        }
+
+        // Check if grade already exists for this student and course
+        const existingGrade = await sequelize.query(
+            'SELECT * FROM diem WHERE msv = ? AND hocphan = ? AND hocki = ?',
+            {
+                replacements: [msv, hocphan, hocki],
+                type: sequelize.QueryTypes.SELECT
+            }
+        );
+
+        if (existingGrade && existingGrade.length > 0) {
+            return res.redirect('/taikhoan/admin/manage-grades?error=Điểm cho sinh viên này và học phần này đã tồn tại');
+        }
+
+        // Convert string values to float
+        const processedDiemQuaTrinh = diemquatrinh ? parseFloat(diemquatrinh) : null;
+        const processedDiemThi = diemthi ? parseFloat(diemthi) : null;
+
+        // Calculate final grade if both scores are available
+        let diemtongket = null;
+        let trangthai = null;
+
+        if (processedDiemQuaTrinh !== null && processedDiemThi !== null) {
+            diemtongket = processedDiemQuaTrinh * 0.3 + processedDiemThi * 0.7;
+            trangthai = diemtongket >= 4.0 ? 'đạt' : 'học lại';
+        }
+
+        // Insert new grade
+        await sequelize.query(
+            `INSERT INTO diem (msv, hocphan, hocki, diemquatrinh, diemthi, diemtongket, trangthai) 
+             VALUES (?, ?, ?, ?, ?, ?, ?)`,
+            {
+                replacements: [
+                    msv,
+                    hocphan,
+                    hocki,
+                    processedDiemQuaTrinh,
+                    processedDiemThi,
+                    diemtongket,
+                    trangthai
+                ],
+                type: sequelize.QueryTypes.INSERT
+            }
+        );
+
+        console.log('Grade added successfully');
+        return res.redirect('/taikhoan/admin/manage-grades?success=Thêm điểm thành công');
+    } catch (error) {
+        console.error('Add grade error:', error);
+        return res.redirect('/taikhoan/admin/manage-grades?error=Đã xảy ra lỗi: ' + error.message);
+    }
+});
+
+// Edit grade
+router.post('/admin/edit-grade', async (req, res) => {
+    try {
+        if (!req.session.user || req.session.user.vaitro !== 'admin') {
+            return res.redirect('/taikhoan/dang-nhap?error=Vui lòng đăng nhập với tài khoản admin');
+        }
+
+        const { id, hocki, diemquatrinh, diemthi } = req.body;
+
+        // Basic validation
+        if (!id || !hocki) {
+            return res.redirect('/taikhoan/admin/manage-grades?error=Thông tin không hợp lệ');
+        }
+
+        // Convert string values to float
+        const processedDiemQuaTrinh = diemquatrinh ? parseFloat(diemquatrinh) : null;
+        const processedDiemThi = diemthi ? parseFloat(diemthi) : null;
+
+        // Calculate final grade if both scores are available
+        let diemtongket = null;
+        let trangthai = null;
+
+        if (processedDiemQuaTrinh !== null && processedDiemThi !== null) {
+            diemtongket = processedDiemQuaTrinh * 0.3 + processedDiemThi * 0.7;
+            trangthai = diemtongket >= 4.0 ? 'đạt' : 'học lại';
+        }
+
+        // Update grade
+        await sequelize.query(
+            `UPDATE diem SET 
+             hocki = ?, 
+             diemquatrinh = ?, 
+             diemthi = ?, 
+             diemtongket = ?, 
+             trangthai = ? 
+             WHERE id = ?`,
+            {
+                replacements: [
+                    hocki,
+                    processedDiemQuaTrinh,
+                    processedDiemThi,
+                    diemtongket,
+                    trangthai,
+                    id
+                ],
+                type: sequelize.QueryTypes.UPDATE
+            }
+        );
+
+        console.log('Grade updated successfully');
+        return res.redirect('/taikhoan/admin/manage-grades?success=Cập nhật điểm thành công');
+    } catch (error) {
+        console.error('Edit grade error:', error);
+        return res.redirect('/taikhoan/admin/manage-grades?error=Đã xảy ra lỗi: ' + error.message);
+    }
+});
+
+// Delete grade
+router.post('/admin/delete-grade', async (req, res) => {
+    try {
+        if (!req.session.user || req.session.user.vaitro !== 'admin') {
+            return res.redirect('/taikhoan/dang-nhap?error=Vui lòng đăng nhập với tài khoản admin');
+        }
+
+        const { gradeId } = req.body;
+
+        // Delete the grade
+        await sequelize.query(
+            'DELETE FROM diem WHERE id = ?',
+            {
+                replacements: [gradeId],
+                type: sequelize.QueryTypes.DELETE
+            }
+        );
+
+        console.log(`Grade ID ${gradeId} deleted successfully`);
+        return res.redirect('/taikhoan/admin/manage-grades?success=Xóa điểm thành công');
+    } catch (error) {
+        console.error('Delete grade error:', error);
+        return res.redirect('/taikhoan/admin/manage-grades?error=Đã xảy ra lỗi: ' + error.message);
+    }
+});
+
+// Get grade details for edit
+router.get('/admin/get-grade/:id', async (req, res) => {
+    try {
+        if (!req.session.user || req.session.user.vaitro !== 'admin') {
+            return res.status(401).json({ success: false, message: 'Unauthorized' });
+        }
+
+        const { id } = req.params;
+
+        // Fetch grade with related data
+        const grades = await sequelize.query(
+            `SELECT d.*, s.hovaten, c.tenhocphan 
+             FROM diem d
+             JOIN sinhvien s ON d.msv = s.msv
+             JOIN dangkyhocphan c ON d.hocphan = c.mahocphan
+             WHERE d.id = ?`,
+            {
+                replacements: [id],
+                type: sequelize.QueryTypes.SELECT
+            }
+        );
+
+        if (!grades || grades.length === 0) {
+            return res.status(404).json({ success: false, message: 'Không tìm thấy điểm' });
+        }
+
+        return res.json({ success: true, grade: grades[0] });
+    } catch (error) {
+        console.error('Get grade error:', error);
+        return res.status(500).json({ success: false, message: 'Đã xảy ra lỗi', error: error.message });
+    }
+});
+
+// Get grades for a specific student
+router.get('/admin/get-student-grades/:msv', async (req, res) => {
+    try {
+        if (!req.session.user || req.session.user.vaitro !== 'admin') {
+            return res.status(401).json({ success: false, message: 'Unauthorized' });
+        }
+
+        const { msv } = req.params;
+
+        // Fetch all grades for this student
+        const grades = await sequelize.query(
+            `SELECT d.*, s.hovaten, c.tenhocphan 
+             FROM diem d
+             JOIN sinhvien s ON d.msv = s.msv
+             JOIN dangkyhocphan c ON d.hocphan = c.mahocphan
+             WHERE d.msv = ?
+             ORDER BY d.hocki DESC`,
+            {
+                replacements: [msv],
+                type: sequelize.QueryTypes.SELECT
+            }
+        );
+
+        // Get student info
+        const students = await sequelize.query(
+            'SELECT * FROM sinhvien WHERE msv = ?',
+            {
+                replacements: [msv],
+                type: sequelize.QueryTypes.SELECT
+            }
+        );
+
+        return res.json({
+            success: true,
+            grades: grades || [],
+            student: students.length > 0 ? students[0] : null
+        });
+    } catch (error) {
+        console.error('Get student grades error:', error);
+        return res.status(500).json({ success: false, message: 'Đã xảy ra lỗi', error: error.message });
+    }
+});
+
+// Get grades for a specific course
+router.get('/admin/get-course-grades/:hocphan', async (req, res) => {
+    try {
+        if (!req.session.user || req.session.user.vaitro !== 'admin') {
+            return res.status(401).json({ success: false, message: 'Unauthorized' });
+        }
+
+        const { hocphan } = req.params;
+
+        // Fetch all grades for this course
+        const grades = await sequelize.query(
+            `SELECT d.*, s.hovaten, c.tenhocphan 
+             FROM diem d
+             JOIN sinhvien s ON d.msv = s.msv
+             JOIN dangkyhocphan c ON d.hocphan = c.mahocphan
+             WHERE d.hocphan = ?
+             ORDER BY s.hovaten ASC`,
+            {
+                replacements: [hocphan],
+                type: sequelize.QueryTypes.SELECT
+            }
+        );
+
+        // Get course info
+        const courses = await sequelize.query(
+            'SELECT * FROM dangkyhocphan WHERE mahocphan = ?',
+            {
+                replacements: [hocphan],
+                type: sequelize.QueryTypes.SELECT
+            }
+        );
+
+        return res.json({
+            success: true,
+            grades: grades || [],
+            course: courses.length > 0 ? courses[0] : null
+        });
+    } catch (error) {
+        console.error('Get course grades error:', error);
+        return res.status(500).json({ success: false, message: 'Đã xảy ra lỗi', error: error.message });
+    }
+});
+
+// Calculate GPA for a student
+router.get('/admin/calculate-gpa/:msv', async (req, res) => {
+    try {
+        if (!req.session.user || req.session.user.vaitro !== 'admin') {
+            return res.status(401).json({ success: false, message: 'Unauthorized' });
+        }
+
+        const { msv } = req.params;
+
+        // Get all passing grades for this student
+        const grades = await sequelize.query(
+            `SELECT d.*, c.sotinchi 
+             FROM diem d
+             JOIN dangkyhocphan c ON d.hocphan = c.mahocphan
+             WHERE d.msv = ? AND d.trangthai = 'đạt'`,
+            {
+                replacements: [msv],
+                type: sequelize.QueryTypes.SELECT
+            }
+        );
+
+        if (!grades || grades.length === 0) {
+            return res.json({ success: true, gpa: null, message: 'Không có điểm để tính GPA' });
+        }
+
+        // Calculate GPA
+        let totalPoints = 0;
+        let totalCredits = 0;
+
+        grades.forEach(grade => {
+            if (grade.diemtongket !== null && grade.sotinchi !== null) {
+                totalPoints += grade.diemtongket * grade.sotinchi;
+                totalCredits += grade.sotinchi;
+            }
+        });
+
+        const gpa = totalCredits > 0 ? (totalPoints / totalCredits).toFixed(2) : null;
+
+        // Update student's GPA field if there is one, or return the calculated value
+        return res.json({ success: true, gpa, totalCredits });
+    } catch (error) {
+        console.error('Calculate GPA error:', error);
+        return res.status(500).json({ success: false, message: 'Đã xảy ra lỗi', error: error.message });
+    }
+});
+
+// Grade statistics page
+router.get('/admin/grade-statistics', async (req, res) => {
+    try {
+        if (!req.session.user || req.session.user.vaitro !== 'admin') {
+            return res.redirect('/taikhoan/dang-nhap?error=Vui lòng đăng nhập với tài khoản admin');
+        }
+
+        res.render('admin/grade-statistics', {
+            title: 'Thống kê Điểm',
+            user: req.session.user
+        });
+    } catch (error) {
+        console.error('Grade statistics error:', error);
+        return res.status(500).send('Đã xảy ra lỗi khi tải trang: ' + error.message);
+    }
+});
+
 // Placeholder routes for dashboards until they are implemented
 router.get('/sinhvien/dashboard', (req, res) => {
     if (!req.session.user || req.session.user.vaitro !== 'sinhvien') {

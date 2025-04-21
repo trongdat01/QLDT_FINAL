@@ -114,35 +114,71 @@ CREATE TABLE vaitro
 );
 
                 -- Table diem
-                CREATE TABLE diem
+                CREATE TABLE
+                IF NOT EXISTS diem
                 (
                     id INT
                     AUTO_INCREMENT PRIMARY KEY,
     hocphan VARCHAR
-                    (20) NOT NULL,
+                (20) NOT NULL,
     hocki VARCHAR
-                    (20) NOT NULL,
+                (20) NOT NULL,
     msv VARCHAR
-                    (20) NOT NULL,
+                (20) NOT NULL,
     diemquatrinh FLOAT,
     diemthi FLOAT,
     diemtongket FLOAT,
     trangthai ENUM
-                    ('đạt', 'học lại'),
+                ('đạt', 'học lại'),
     diemtrungbinh FLOAT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON
+                UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY
+                (msv) REFERENCES sinhvien
+                (msv),
+    FOREIGN KEY
+                (hocphan) REFERENCES dangkyhocphan
+                (mahocphan)
+);
+
+                -- Table lichhoc
+                CREATE TABLE lichhoc
+                (
+                    id INT
+                    AUTO_INCREMENT PRIMARY KEY,
+    mahocphan VARCHAR
+                    (20) NOT NULL,
+    namhoc VARCHAR
+                    (20) NOT NULL,
+    hocky VARCHAR
+                    (20) NOT NULL,
+    giangvien VARCHAR
+                    (100) NOT NULL,
+    phonghoclythuyet VARCHAR
+                    (50),
+    thu_lythuyet VARCHAR
+                    (20),
+    cahoc_lythuyet VARCHAR
+                    (50),
+    phonghocthuchanh VARCHAR
+                    (50),
+    thu_thuchanh VARCHAR
+                    (20),
+    cahoc_thuchanh VARCHAR
+                    (50),
+    ngaybatdau DATE NOT NULL,
+    ngayketthuc DATE NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON
                     UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY
-                    (msv) REFERENCES sinhvien
-                    (msv),
-    FOREIGN KEY
-                    (hocphan) REFERENCES dangkyhocphan
+                    (mahocphan) REFERENCES dangkyhocphan
                     (mahocphan)
 );
 
-                    -- Table lichhoc
-                    CREATE TABLE lichhoc
+                    -- Table lichthi
+                    CREATE TABLE lichthi
                     (
                         id INT
                         AUTO_INCREMENT PRIMARY KEY,
@@ -150,24 +186,19 @@ CREATE TABLE vaitro
                         (20) NOT NULL,
     namhoc VARCHAR
                         (20) NOT NULL,
-    hocky VARCHAR
+    kihoc VARCHAR
                         (20) NOT NULL,
-    giangvien VARCHAR
+    giangviencoithi VARCHAR
                         (100) NOT NULL,
-    phonghoclythuyet VARCHAR
-                        (50),
-    thu_lythuyet VARCHAR
-                        (20),
-    cahoc_lythuyet VARCHAR
-                        (50),
-    phonghocthuchanh VARCHAR
-                        (50),
-    thu_thuchanh VARCHAR
-                        (20),
-    cahoc_thuchanh VARCHAR
-                        (50),
-    ngaybatdau DATE NOT NULL,
-    ngayketthuc DATE NOT NULL,
+    phongthi VARCHAR
+                        (50) NOT NULL,
+    thu VARCHAR
+                        (20) NOT NULL,
+    thoigianthi DATETIME NOT NULL,
+    hinhthuathi VARCHAR
+                        (50) NOT NULL,
+    trangthai ENUM
+                        ('đã lên lịch', 'đã hoàn thành', 'hoãn thi') DEFAULT 'đã lên lịch',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON
                         UPDATE CURRENT_TIMESTAMP,
@@ -176,107 +207,77 @@ CREATE TABLE vaitro
                         (mahocphan)
 );
 
-                        -- Table lichthi
-                        CREATE TABLE lichthi
+                        -- Table taichinh
+                        CREATE TABLE taichinh
                         (
                             id INT
                             AUTO_INCREMENT PRIMARY KEY,
-    mahocphan VARCHAR
+    msv VARCHAR
                             (20) NOT NULL,
-    namhoc VARCHAR
-                            (20) NOT NULL,
-    kihoc VARCHAR
-                            (20) NOT NULL,
-    giangviencoithi VARCHAR
-                            (100) NOT NULL,
-    phongthi VARCHAR
-                            (50) NOT NULL,
-    thu VARCHAR
-                            (20) NOT NULL,
-    thoigianthi DATETIME NOT NULL,
-    hinhthuathi VARCHAR
-                            (50) NOT NULL,
     trangthai ENUM
-                            ('đã lên lịch', 'đã hoàn thành', 'hoãn thi') DEFAULT 'đã lên lịch',
+                            ('đã hoàn thành', 'chưa hoàn thành') DEFAULT 'chưa hoàn thành',
+    khoanphainop DECIMAL
+                            (10, 2) NOT NULL,
+    khoandanop DECIMAL
+                            (10, 2) DEFAULT 0,
+    khoandocmien DECIMAL
+                            (10, 2) DEFAULT 0,
+    qr_nganhang VARCHAR
+                            (100),
+    qr_sotaikhoan VARCHAR
+                            (50),
+    qr_tennguoinhan VARCHAR
+                            (100),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON
                             UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY
-                            (mahocphan) REFERENCES dangkyhocphan
-                            (mahocphan)
+                            (msv) REFERENCES sinhvien
+                            (msv)
 );
 
-                            -- Table taichinh
-                            CREATE TABLE taichinh
+                            -- Table phieuthu
+                            CREATE TABLE phieuthu
                             (
-                                id INT
-                                AUTO_INCREMENT PRIMARY KEY,
-    msv VARCHAR
-                                (20) NOT NULL,
-    trangthai ENUM
-                                ('đã hoàn thành', 'chưa hoàn thành') DEFAULT 'chưa hoàn thành',
-    khoanphainop DECIMAL
-                                (10, 2) NOT NULL,
-    khoandanop DECIMAL
-                                (10, 2) DEFAULT 0,
-    khoandocmien DECIMAL
-                                (10, 2) DEFAULT 0,
-    qr_nganhang VARCHAR
-                                (100),
-    qr_sotaikhoan VARCHAR
-                                (50),
-    qr_tennguoinhan VARCHAR
-                                (100),
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON
+                                id VARCHAR(50) PRIMARY KEY,
+                                taichinh_id INT NOT NULL,
+                                tiendathu DECIMAL(10, 2) NOT NULL,
+                                thoigian DATETIME DEFAULT CURRENT_TIMESTAMP,
+                                nganhangchuyen VARCHAR(100),
+                                nganhangnhan VARCHAR(100),
+                                nguoilaphieu VARCHAR(100) NOT NULL,
+                                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                                ON
                                 UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY
-                                (msv) REFERENCES sinhvien
-                                (msv)
+                                (taichinh_id) REFERENCES taichinh
+                                (id)
 );
 
-                                -- Table phieuthu
-                                CREATE TABLE phieuthu
-                                (
-                                    id VARCHAR(50) PRIMARY KEY,
-                                    taichinh_id INT NOT NULL,
-                                    tiendathu DECIMAL(10, 2) NOT NULL,
-                                    thoigian DATETIME DEFAULT CURRENT_TIMESTAMP,
-                                    nganhangchuyen VARCHAR(100),
-                                    nganhangnhan VARCHAR(100),
-                                    nguoilaphieu VARCHAR(100) NOT NULL,
-                                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-                                    ON
-                                    UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY
-                                    (taichinh_id) REFERENCES taichinh
-                                    (id)
-);
+                                -- Insert initial data to vaitro table
+                                INSERT INTO vaitro
+                                    (vaitro)
+                                VALUES
+                                    ('admin'),
+                                    ('sinhvien');
 
-                                    -- Insert initial data to vaitro table
-                                    INSERT INTO vaitro
-                                        (vaitro)
-                                    VALUES
-                                        ('admin'),
-                                        ('sinhvien');
+                                -- Optional: Add some sample data for testing
+                                -- Example admin account
+                                INSERT INTO admin
+                                    (email, matkhau, vaitro_id)
+                                VALUES
+                                    ('admin@example.com', '$2a$10$XFCLdWhDIUZY2YuQPkgVVuh4mZMPvGX9hIAA2m3rn7rJ8JWq8vTOi', 1);
+                                -- Password: admin123
 
-                                    -- Optional: Add some sample data for testing
-                                    -- Example admin account
-                                    INSERT INTO admin
-                                        (email, matkhau, vaitro_id)
-                                    VALUES
-                                        ('admin@example.com', '$2a$10$XFCLdWhDIUZY2YuQPkgVVuh4mZMPvGX9hIAA2m3rn7rJ8JWq8vTOi', 1);
-                                    -- Password: admin123
+                                -- Example student account
+                                INSERT INTO sinhvien
+                                    (msv, hovaten, sodienthoai, khoa, nienkhoa, gioitinh, ngaysinh, vaitro_id, email, matkhau)
+                                VALUES
+                                    ('SV001', 'Nguyễn Văn A', '0901234567', 'Công nghệ thông tin', '2022-2026', 'Nam', '2004-05-15', 2, 'nguyenvana@example.com', '$2a$10$XFCLdWhDIUZY2YuQPkgVVuh4mZMPvGX9hIAA2m3rn7rJ8JWq8vTOi');
 
-                                    -- Example student account
-                                    INSERT INTO sinhvien
-                                        (msv, hovaten, sodienthoai, khoa, nienkhoa, gioitinh, ngaysinh, vaitro_id, email, matkhau)
-                                    VALUES
-                                        ('SV001', 'Nguyễn Văn A', '0901234567', 'Công nghệ thông tin', '2022-2026', 'Nam', '2004-05-15', 2, 'nguyenvana@example.com', '$2a$10$XFCLdWhDIUZY2YuQPkgVVuh4mZMPvGX9hIAA2m3rn7rJ8JWq8vTOi');
-
-                                    -- Example course
-                                    INSERT INTO dangkyhocphan
-                                        (mahocphan, tenhocphan, khoa, hocki, loaihocphan, sotinchi)
-                                    VALUES
-                                        ('CNTT001', 'Lập trình cơ bản', 'Công nghệ thông tin', 'Học kỳ 1', 'bắt buộc', 3);
+                                -- Example course
+                                INSERT INTO dangkyhocphan
+                                    (mahocphan, tenhocphan, khoa, hocki, loaihocphan, sotinchi)
+                                VALUES
+                                    ('CNTT001', 'Lập trình cơ bản', 'Công nghệ thông tin', 'Học kỳ 1', 'bắt buộc', 3);

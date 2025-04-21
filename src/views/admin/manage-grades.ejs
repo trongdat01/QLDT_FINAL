@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>
+        <%= title %> | Hệ thống Quản lý Đào tạo
+    </title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.3/font/bootstrap-icons.css">
+
+    <style>
+        .table-responsive {
+            overflow-x: auto;
+        }
+
+        .action-buttons .btn {
+            margin-right: 5px;
+        }
+
+        .card {
+            margin-bottom: 20px;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 30px;
+        }
+
+        .filter-row {
+            margin-bottom: 15px;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Admin Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand" href="/">Hệ thống Quản lý Đào tạo</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/taikhoan/admin/dashboard">Trang chủ</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/taikhoan/admin/manage-admins">Quản lý Admin</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/taikhoan/admin/manage-students">Quản lý Sinh viên</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/taikhoan/admin/manage-courses">Quản lý Học phần</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="/taikhoan/admin/manage-grades">Quản lý Điểm</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/taikhoan/admin/manage-news">Quản lý Tin tức</a>
+                    </li>
+                </ul>
+                <ul class="navbar-nav">
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button"
+                            data-bs-toggle="dropdown">
+                            <i class="bi bi-person-circle"></i>
+                            <% if (typeof user !=='undefined' ) { %>
+                                <%= user.email %>
+                                    <% } else { %>
+                                        Tài khoản
+                                        <% } %>
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li><a class="dropdown-item" href="/taikhoan/admin/profile">Thông tin cá nhân</a></li>
+                            <li>
+                                <hr class="dropdown-divider">
+                            </li>
+                            <li><a class="dropdown-item" href="/taikhoan/dang-xuat">Đăng xuất</a></li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <h1 class="mb-4">Quản lý Điểm Sinh viên</h1>
+
+        <% if (error) { %>
+            <div class="alert alert-danger alert-dismissible fade show">
+                <%= error %>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+            <% } %>
+
+                <% if (success) { %>
+                    <div class="alert alert-success alert-dismissible fade show">
+                        <%= success %>
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                    <% } %>
+
+                        <div class="row">
+                            <div class="col-md-12">
+                                <div class="card">
+                                    <div class="card-header d-flex justify-content-between align-items-center">
+                                        <h5 class="card-title mb-0">Thêm Điểm Mới</h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <form id="addGradeForm" action="/taikhoan/admin/add-grade" method="POST"
+                                            class="row g-3">
+                                            <div class="col-md-4">
+                                                <label for="msv" class="form-label">Sinh Viên</label>
+                                                <select class="form-select" id="msv" name="msv" required>
+                                                    <option value="">Chọn sinh viên</option>
+                                                    <% students.forEach(student=> { %>
+                                                        <option value="<%= student.msv %>">
+                                                            <%= student.msv %> - <%= student.hovaten %>
+                                                        </option>
+                                                        <% }); %>
+                                                </select>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <label for="hocphan" class="form-label">Học Phần</label>
+                                                <select class="form-select" id="hocphan" name="hocphan" required>
+                                                    <option value="">Chọn học phần</option>
+                                                    <% courses.forEach(course=> { %>
+                                                        <option value="<%= course.mahocphan %>">
+                                                            <%= course.mahocphan %> - <%= course.tenhocphan %>
+                                                        </option>
+                                                        <% }); %>
+                                                </select>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <label for="hocki" class="form-label">Học Kỳ</label>
+                                                <select class="form-select" id="hocki" name="hocki" required>
+                                                    <option value="">Chọn học kỳ</option>
+                                                    <option value="1">Học kỳ 1</option>
+                                                    <option value="2">Học kỳ 2</option>
+                                                    <option value="3">Học kỳ 3</option>
+                                                </select>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <label for="diemquatrinh" class="form-label">Điểm Quá Trình
+                                                    (30%)</label>
+                                                <input type="number" step="0.1" min="0" max="10" class="form-control"
+                                                    id="diemquatrinh" name="diemquatrinh"
+                                                    placeholder="Nhập điểm quá trình">
+                                            </div>
+                                            <div class="col-md-4">
+                                                <label for="diemthi" class="form-label">Điểm Thi (70%)</label>
+                                                <input type="number" step="0.1" min="0" max="10" class="form-control"
+                                                    id="diemthi" name="diemthi" placeholder="Nhập điểm thi">
+                                            </div>
+                                            <div class="col-md-12">
+                                                <button type="submit" class="btn btn-primary mt-3">Thêm
+                                                    Điểm</button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card mt-4">
+                            <div class="card-header">
+                                <h5 class="card-title mb-0">Danh Sách Điểm</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row filter-row">
+                                    <div class="col-md-4">
+                                        <input type="text" id="searchInput" class="form-control"
+                                            placeholder="Tìm kiếm theo tên, mã SV...">
+                                    </div>
+                                    <div class="col-md-3">
+                                        <select id="courseFilter" class="form-select">
+                                            <option value="">Tất cả học phần</option>
+                                            <% courses.forEach(course=> { %>
+                                                <option value="<%= course.mahocphan %>">
+                                                    <%= course.mahocphan %> - <%= course.tenhocphan %>
+                                                </option>
+                                                <% }); %>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <select id="semesterFilter" class="form-select">
+                                            <option value="">Tất cả học kỳ</option>
+                                            <option value="1">Học kỳ 1</option>
+                                            <option value="2">Học kỳ 2</option>
+                                            <option value="3">Học kỳ 3</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-2">
+                                        <select id="statusFilter" class="form-select">
+                                            <option value="">Tất cả trạng thái</option>
+                                            <option value="đạt">Đạt</option>
+                                            <option value="học lại">Học lại</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div class="table-responsive">
+                                    <table class="table table-bordered table-hover" id="gradesTable">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th>STT</th>
+                                                <th>Mã SV</th>
+                                                <th>Họ và tên</th>
+                                                <th>Mã học phần</th>
+                                                <th>Tên học phần</th>
+                                                <th>Học kỳ</th>
+                                                <th>Điểm QT</th>
+                                                <th>Điểm thi</th>
+                                                <th>Điểm TK</th>
+                                                <th>Trạng thái</th>
+                                                <th>Thao tác</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <% if (grades && grades.length> 0) { %>
+                                                <% grades.forEach((grade, index)=> { %>
+                                                    <tr>
+                                                        <td>
+                                                            <%= index + 1 %>
+                                                        </td>
+                                                        <td>
+                                                            <%= grade.msv %>
+                                                        </td>
+                                                        <td>
+                                                            <%= grade.hovaten %>
+                                                        </td>
+                                                        <td>
+                                                            <%= grade.hocphan %>
+                                                        </td>
+                                                        <td>
+                                                            <%= grade.tenhocphan %>
+                                                        </td>
+                                                        <td>
+                                                            <%= grade.hocki %>
+                                                        </td>
+                                                        <td>
+                                                            <%= grade.diemquatrinh !==null ?
+                                                                grade.diemquatrinh.toFixed(1) : '-' %>
+                                                        </td>
+                                                        <td>
+                                                            <%= grade.diemthi !==null ? grade.diemthi.toFixed(1) : '-'
+                                                                %>
+                                                        </td>
+                                                        <td>
+                                                            <% if (grade.diemtongket !==null) { %>
+                                                                <span
+                                                                    class="<%= grade.diemtongket >= 4.0 ? 'text-success' : 'text-danger' %>">
+                                                                    <%= grade.diemtongket.toFixed(1) %>
+                                                                </span>
+                                                                <% } else { %>
+                                                                    -
+                                                                    <% } %>
+                                                        </td>
+                                                        <td>
+                                                            <% if (grade.trangthai==='đạt' ) { %>
+                                                                <span class="badge bg-success">Đạt</span>
+                                                                <% } else if (grade.trangthai==='học lại' ) { %>
+                                                                    <span class="badge bg-danger">Học lại</span>
+                                                                    <% } else { %>
+                                                                        <span class="badge bg-secondary">Chưa
+                                                                            có</span>
+                                                                        <% } %>
+                                                        </td>
+                                                        <td class="action-buttons">
+                                                            <button class="btn btn-sm btn-primary edit-grade"
+                                                                data-id="<%= grade.id %>">Sửa</button>
+                                                            <button class="btn btn-sm btn-danger delete-grade"
+                                                                data-id="<%= grade.id %>" data-msv="<%= grade.msv %>"
+                                                                data-name="<%= grade.hovaten %>"
+                                                                data-course="<%= grade.tenhocphan %>">Xóa</button>
+                                                        </td>
+                                                    </tr>
+                                                    <% }); %>
+                                                        <% } else { %>
+                                                            <tr>
+                                                                <td colspan="11" class="text-center">Chưa có dữ liệu
+                                                                    điểm</td>
+                                                            </tr>
+                                                            <% } %>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+    </div>
+
+    <!-- Edit Grade Modal -->
+    <div class="modal fade" id="editGradeModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Chỉnh sửa Điểm</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="editGradeForm" action="/taikhoan/admin/edit-grade" method="POST">
+                        <input type="hidden" id="edit_id" name="id">
+
+                        <div class="mb-3">
+                            <label class="form-label">Sinh viên</label>
+                            <input type="text" class="form-control" id="edit_student_info" disabled>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Học phần</label>
+                            <input type="text" class="form-control" id="edit_course_info" disabled>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="edit_hocki" class="form-label">Học kỳ</label>
+                            <select class="form-select" id="edit_hocki" name="hocki" required>
+                                <option value="1">Học kỳ 1</option>
+                                <option value="2">Học kỳ 2</option>
+                                <option value="3">Học kỳ 3</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="edit_diemquatrinh" class="form-label">Điểm quá trình (30%)</label>
+                            <input type="number" step="0.1" min="0" max="10" class="form-control" id="edit_diemquatrinh"
+                                name="diemquatrinh">
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="edit_diemthi" class="form-label">Điểm thi (70%)</label>
+                            <input type="number" step="0.1" min="0" max="10" class="form-control" id="edit_diemthi"
+                                name="diemthi">
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Điểm tổng kết</label>
+                            <input type="text" class="form-control" id="edit_diemtongket" disabled>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Trạng thái</label>
+                            <input type="text" class="form-control" id="edit_trangthai" disabled>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                    <button type="button" class="btn btn-primary" id="saveGradeChanges">Lưu thay đổi</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Grade Modal -->
+    <div class="modal fade" id="deleteGradeModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Xác nhận xóa</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Bạn có chắc chắn muốn xóa điểm của sinh viên <span id="delete_student_name"></span> (<span
+                            id="delete_student_msv"></span>) cho môn <span id="delete_course_name"></span>?</p>
+                    <p class="text-danger">Lưu ý: Hành động này không thể hoàn tác!</p>
+                </div>
+                <div class="modal-footer">
+                    <form id="deleteGradeForm" action="/taikhoan/admin/delete-grade" method="POST">
+                        <input type="hidden" id="delete_id" name="gradeId">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                        <button type="submit" class="btn btn-danger">Xóa</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-light text-center text-lg-start mt-5">
+        <div class="text-center p-3" style="background-color: rgba(0, 0, 0, 0.05);">
+            © 2023 Hệ thống Quản lý Đào tạo |
+            <a class="text-dark" href="/">home.com</a>
+        </div>
+    </footer>
+
+    <!-- Bootstrap Bundle with Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // Edit grade functionality
+            document.querySelectorAll('.edit-grade').forEach(button => {
+                button.addEventListener('click', function () {
+                    const gradeId = this.getAttribute('data-id');
+
+                    // Fetch grade details using AJAX
+                    fetch(`/taikhoan/admin/get-grade/${gradeId}`)
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                const grade = data.grade;
+
+                                // Populate form
+                                document.getElementById('edit_id').value = grade.id;
+                                document.getElementById('edit_student_info').value = `${grade.msv} - ${grade.hovaten}`;
+                                document.getElementById('edit_course_info').value = `${grade.hocphan} - ${grade.tenhocphan}`;
+                                document.getElementById('edit_hocki').value = grade.hocki;
+                                document.getElementById('edit_diemquatrinh').value = grade.diemquatrinh;
+                                document.getElementById('edit_diemthi').value = grade.diemthi;
+                                document.getElementById('edit_diemtongket').value = grade.diemtongket !== null ? grade.diemtongket.toFixed(1) : '';
+
+                                let trangthaiText = '';
+                                if (grade.trangthai === 'đạt') {
+                                    trangthaiText = 'Đạt';
+                                } else if (grade.trangthai === 'học lại') {
+                                    trangthaiText = 'Học lại';
+                                } else {
+                                    trangthaiText = 'Chưa có';
+                                }
+                                document.getElementById('edit_trangthai').value = trangthaiText;
+
+                                // Show modal
+                                new bootstrap.Modal(document.getElementById('editGradeModal')).show();
+                            } else {
+                                alert('Không thể tải thông tin điểm: ' + data.message);
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error fetching grade details:', error);
+                            alert('Đã xảy ra lỗi khi tải thông tin điểm');
+                        });
+                });
+            });
+
+            // Save grade changes
+            document.getElementById('saveGradeChanges').addEventListener('click', function () {
+                document.getElementById('editGradeForm').submit();
+            });
+
+            // Delete grade functionality
+            document.querySelectorAll('.delete-grade').forEach(button => {
+                button.addEventListener('click', function () {
+                    const gradeId = this.getAttribute('data-id');
+                    const studentMsv = this.getAttribute('data-msv');
+                    const studentName = this.getAttribute('data-name');
+                    const courseName = this.getAttribute('data-course');
+
+                    document.getElementById('delete_id').value = gradeId;
+                    document.getElementById('delete_student_msv').textContent = studentMsv;
+                    document.getElementById('delete_student_name').textContent = studentName;
+                    document.getElementById('delete_course_name').textContent = courseName;
+
+                    new bootstrap.Modal(document.getElementById('deleteGradeModal')).show();
+                });
+            });
+
+            // Filtering functionality
+            const searchInput = document.getElementById('searchInput');
+            const courseFilter = document.getElementById('courseFilter');
+            const semesterFilter = document.getElementById('semesterFilter');
+            const statusFilter = document.getElementById('statusFilter');
+
+            function filterTable() {
+                const searchValue = searchInput.value.toLowerCase();
+                const courseValue = courseFilter.value;
+                const semesterValue = semesterFilter.value;
+                const statusValue = statusFilter.value;
+
+                document.querySelectorAll('#gradesTable tbody tr').forEach(row => {
+                    const msv = row.cells[1].textContent.toLowerCase();
+                    const name = row.cells[2].textContent.toLowerCase();
+                    const courseCode = row.cells[3].textContent;
+                    const semester = row.cells[5].textContent;
+                    const status = row.cells[9].textContent.toLowerCase().trim();
+
+                    const matchesSearch = msv.includes(searchValue) || name.includes(searchValue);
+                    const matchesCourse = courseValue === '' || courseCode === courseValue;
+                    const matchesSemester = semesterValue === '' || semester === semesterValue;
+
+                    // For status filter
+                    let matchesStatus = true;
+                    if (statusValue === 'đạt') {
+                        matchesStatus = status.includes('đạt');
+                    } else if (statusValue === 'học lại') {
+                        matchesStatus = status.includes('học lại');
+                    }
+
+                    row.style.display = (matchesSearch && matchesCourse && matchesSemester && matchesStatus) ? '' : 'none';
+                });
+            }
+
+            searchInput.addEventListener('input', filterTable);
+            courseFilter.addEventListener('change', filterTable);
+            semesterFilter.addEventListener('change', filterTable);
+            statusFilter.addEventListener('change', filterTable);
+
+            // Real-time calculation of final grade in edit form
+            const diemQT = document.getElementById('edit_diemquatrinh');
+            const diemThi = document.getElementById('edit_diemthi');
+            const diemTK = document.getElementById('edit_diemtongket');
+            const trangThai = document.getElementById('edit_trangthai');
+
+            function calculateFinalGrade() {
+                if (diemQT.value !== '' && diemThi.value !== '') {
+                    const qt = parseFloat(diemQT.value);
+                    const thi = parseFloat(diemThi.value);
+
+                    if (!isNaN(qt) && !isNaN(thi)) {
+                        const finalGrade = (qt * 0.3 + thi * 0.7).toFixed(1);
+                        diemTK.value = finalGrade;
+
+                        if (parseFloat(finalGrade) >= 4.0) {
+                            trangThai.value = 'Đạt';
+                        } else {
+                            trangThai.value = 'Học lại';
+                        }
+                    }
+                }
+            }
+
+            diemQT.addEventListener('input', calculateFinalGrade);
+            diemThi.addEventListener('input', calculateFinalGrade);
+        });
+    </script>
+</body>
+
+</html>
