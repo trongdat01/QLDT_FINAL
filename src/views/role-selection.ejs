@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>
+        <%= title %>
+    </title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f8f9fa;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .role-selection-container {
+            max-width: 500px;
+            width: 100%;
+            padding: 2rem;
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+        }
+
+        .title {
+            color: #4e73df;
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .btn-continue {
+            background-color: #4e73df;
+            border-color: #4e73df;
+            width: 100%;
+            padding: 0.7rem;
+            margin-top: 1.5rem;
+        }
+
+        .btn-continue:hover {
+            background-color: #2e59d9;
+            border-color: #2e59d9;
+        }
+
+        .role-radio {
+            padding: 1rem;
+            border: 1px solid #dee2e6;
+            border-radius: 0.5rem;
+            margin-bottom: 1rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .role-radio:hover {
+            border-color: #4e73df;
+            background-color: #f8f9fa;
+        }
+
+        .role-radio input {
+            margin-right: 0.5rem;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="role-selection-container">
+        <h2 class="title">Chọn vai trò của bạn</h2>
+
+        <% if (error) { %>
+            <div class="alert alert-danger" role="alert">
+                <%= error %>
+            </div>
+            <% } %>
+
+                <form action="/taikhoan/chon-vai-tro" method="POST">
+                    <% roles.forEach(role=> { %>
+                        <div class="role-radio">
+                            <input type="radio" id="role-<%= role.id %>" name="vaitro_id" value="<%= role.id %>"
+                                required>
+                            <label for="role-<%= role.id %>">
+                                <%= role.vaitro %>
+                            </label>
+                        </div>
+                        <% }); %>
+
+                            <button type="submit" class="btn btn-primary btn-continue">Tiếp tục</button>
+                </form>
+
+                <div class="text-center mt-3">
+                    <a href="/" class="text-decoration-none">Quay lại trang chủ</a>
+                </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+
+</html>

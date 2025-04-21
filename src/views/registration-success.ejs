@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>
+        <%= title %>
+    </title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f8f9fa;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .success-container {
+            max-width: 550px;
+            width: 100%;
+            padding: 2rem;
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+            text-align: center;
+        }
+
+        .success-icon {
+            font-size: 5rem;
+            color: #28a745;
+            margin-bottom: 1.5rem;
+        }
+
+        .btn-primary {
+            background-color: #4e73df;
+            border-color: #4e73df;
+            padding: 0.7rem 2rem;
+            margin-top: 1.5rem;
+        }
+
+        .btn-primary:hover {
+            background-color: #2e59d9;
+            border-color: #2e59d9;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="success-container">
+        <div class="success-icon">
+            <i class="fas fa-check-circle"></i>
+            ✓
+        </div>
+
+        <h2 class="mb-3">Tạo tài khoản thành công!</h2>
+
+        <p class="lead">
+            <% if (role==='admin' ) { %>
+                Bạn đã tạo tài khoản Admin mới thành công.
+                <% } else if (role==='sinhvien' ) { %>
+                    Bạn đã tạo tài khoản Sinh viên mới thành công.
+                    <% } else { %>
+                        Tài khoản mới đã được tạo thành công.
+                        <% } %>
+        </p>
+
+        <div class="mt-3">
+            <p>Bạn có thể:</p>
+            <div class="d-grid gap-2 d-md-block">
+                <a href="/taikhoan/tao-tai-khoan" class="btn btn-primary">Tạo tài khoản khác</a>
+                <a href="/admin/dashboard" class="btn btn-outline-primary ms-md-2">Quay lại Dashboard</a>
+            </div>
+        </div>
+
+        <div class="mt-4">
+            <a href="/" class="text-decoration-none">Quay lại trang chủ</a>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+</body>
+
+</html>

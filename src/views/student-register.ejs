@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Đăng ký Sinh viên</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f8f9fa;
+            padding: 2rem 0;
+        }
+
+        .student-form-container {
+            max-width: 750px;
+            margin: 0 auto;
+            padding: 2rem;
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+        }
+
+        .form-header {
+            background-color: #4e73df;
+            color: white;
+            text-align: center;
+            padding: 1.5rem;
+            border-radius: 10px 10px 0 0;
+            margin: -2rem -2rem 2rem -2rem;
+        }
+
+        .btn-submit {
+            background-color: #4e73df;
+            border-color: #4e73df;
+            width: 100%;
+            padding: 0.7rem;
+            margin-top: 1.5rem;
+        }
+
+        .btn-submit:hover {
+            background-color: #2e59d9;
+            border-color: #2e59d9;
+        }
+
+        .form-section {
+            border-bottom: 1px solid #e3e6f0;
+            padding-bottom: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .form-section:last-child {
+            border-bottom: none;
+        }
+
+        .form-section-title {
+            color: #4e73df;
+            margin-bottom: 1.2rem;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="student-form-container">
+        <div class="form-header">
+            <h2 class="mb-0">Đăng ký Tài khoản Sinh viên</h2>
+        </div>
+
+        <% if (typeof error !=='undefined' && error) { %>
+            <div class="alert alert-danger" role="alert">
+                <%= error %>
+            </div>
+            <% } %>
+
+                <form action="/taikhoan/dangky-sinhvien" method="POST">
+                    <input type="hidden" name="vaitro_id" value="<%= vaitro_id %>">
+
+                    <div class="form-section">
+                        <h4 class="form-section-title">Thông tin tài khoản</h4>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="email" class="form-label">Email <span class="text-danger">*</span></label>
+                                <input type="email" class="form-control" id="email" name="email" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="msv" class="form-label">Mã sinh viên <span
+                                        class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="msv" name="msv" required>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <label for="matkhau" class="form-label">Mật khẩu <span
+                                        class="text-danger">*</span></label>
+                                <input type="password" class="form-control" id="matkhau" name="matkhau" required>
+                                <div class="form-text">Mật khẩu phải có ít nhất 6 ký tự</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="xacnhan_matkhau" class="form-label">Xác nhận mật khẩu <span
+                                        class="text-danger">*</span></label>
+                                <input type="password" class="form-control" id="xacnhan_matkhau" name="xacnhan_matkhau"
+                                    required>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-section">
+                        <h4 class="form-section-title">Thông tin cá nhân</h4>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="hovaten" class="form-label">Họ và tên <span
+                                        class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="hovaten" name="hovaten" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="sodienthoai" class="form-label">Số điện thoại</label>
+                                <input type="text" class="form-control" id="sodienthoai" name="sodienthoai">
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-4">
+                                <label for="ngaysinh" class="form-label">Ngày sinh</label>
+                                <input type="date" class="form-control" id="ngaysinh" name="ngaysinh">
+                            </div>
+                            <div class="col-md-4">
+                                <label for="gioitinh" class="form-label">Giới tính</label>
+                                <select class="form-select" id="gioitinh" name="gioitinh">
+                                    <option value="" selected>Chọn giới tính</option>
+                                    <option value="Nam">Nam</option>
+                                    <option value="Nữ">Nữ</option>
+                                    <option value="Khác">Khác</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label for="nienkhoa" class="form-label">Niên khóa <span
+                                        class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="nienkhoa" name="nienkhoa"
+                                    placeholder="VD: 2022-2026" required>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-section">
+                        <h4 class="form-section-title">Thông tin học tập</h4>
+                        <div class="mb-3">
+                            <label for="khoa" class="form-label">Khoa <span class="text-danger">*</span></label>
+                            <select class="form-select" id="khoa" name="khoa" required>
+                                <option value="" disabled selected>Chọn khoa</option>
+                                <option value="Công nghệ thông tin">Công nghệ thông tin</option>
+                                <option value="Kinh tế">Kinh tế</option>
+                                <option value="Ngoại ngữ">Ngoại ngữ</option>
+                                <option value="Kỹ thuật">Kỹ thuật</option>
+                                <option value="Y dược">Y dược</option>
+                                <option value="Luật">Luật</option>
+                                <option value="Xây dựng">Xây dựng</option>
+                                <option value="Sư phạm">Sư phạm</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="mt-4">
+                        <p class="text-danger">(*) Thông tin bắt buộc</p>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary btn-submit">Đăng ký</button>
+
+                    <div class="text-center mt-3">
+                        <a href="/taikhoan/tao-tai-khoan" class="text-decoration-none">Quay lại chọn vai trò</a>
+                    </div>
+                </form>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const form = document.querySelector('form');
+            form.addEventListener('submit', function (event) {
+                const email = document.getElementById('email').value.trim();
+                const msv = document.getElementById('msv').value.trim();
+                const matkhau = document.getElementById('matkhau').value;
+                const xacnhan_matkhau = document.getElementById('xacnhan_matkhau').value;
+                const hovaten = document.getElementById('hovaten').value.trim();
+                const khoa = document.getElementById('khoa').value;
+                const nienkhoa = document.getElementById('nienkhoa').value.trim();
+
+                if (!email || !msv || !matkhau || !xacnhan_matkhau || !hovaten || !khoa || !nienkhoa) {
+                    alert('Vui lòng điền đầy đủ thông tin bắt buộc');
+                    event.preventDefault();
+                    return;
+                }
+
+                if (matkhau.length < 6) {
+                    alert('Mật khẩu phải có ít nhất 6 ký tự');
+                    event.preventDefault();
+                    return;
+                }
+
+                if (matkhau !== xacnhan_matkhau) {
+                    alert('Mật khẩu xác nhận không khớp');
+                    event.preventDefault();
+                    return;
+                }
+            });
+        });
+    </script>
+</body>
+
+</html>
