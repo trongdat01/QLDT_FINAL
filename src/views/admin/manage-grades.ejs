@@ -174,21 +174,37 @@
                             </div>
                             <div class="card-body">
                                 <div class="row filter-row">
-                                    <div class="col-md-4">
+                                    <div class="col-md-3">
                                         <input type="text" id="searchInput" class="form-control"
                                             placeholder="Tìm kiếm theo tên, mã SV...">
                                     </div>
                                     <div class="col-md-3">
+                                        <select id="studentFilter" class="form-select">
+                                            <option value="">Tất cả sinh viên</option>
+                                            <% let uniqueStudents=new Map(); %>
+                                                <% if (grades && grades.length> 0) { %>
+                                                    <% grades.forEach(grade=> { %>
+                                                        <% if (!uniqueStudents.has(grade.msv)) { %>
+                                                            <% uniqueStudents.set(grade.msv, grade.hovaten); %>
+                                                                <option value="<%= grade.msv %>">
+                                                                    <%= grade.msv %> - <%= grade.hovaten %>
+                                                                </option>
+                                                                <% } %>
+                                                                    <% }); %>
+                                                                        <% } %>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-2">
                                         <select id="courseFilter" class="form-select">
                                             <option value="">Tất cả học phần</option>
                                             <% courses.forEach(course=> { %>
                                                 <option value="<%= course.mahocphan %>">
-                                                    <%= course.mahocphan %> - <%= course.tenhocphan %>
+                                                    <%= course.mahocphan %>
                                                 </option>
                                                 <% }); %>
                                         </select>
                                     </div>
-                                    <div class="col-md-3">
+                                    <div class="col-md-2">
                                         <select id="semesterFilter" class="form-select">
                                             <option value="">Tất cả học kỳ</option>
                                             <option value="1">Học kỳ 1</option>
@@ -462,28 +478,42 @@
 
             // Filtering functionality
             const searchInput = document.getElementById('searchInput');
+            const studentFilter = document.getElementById('studentFilter');
             const courseFilter = document.getElementById('courseFilter');
             const semesterFilter = document.getElementById('semesterFilter');
             const statusFilter = document.getElementById('statusFilter');
 
             function filterTable() {
                 const searchValue = searchInput.value.toLowerCase();
+                const studentValue = studentFilter.value;
                 const courseValue = courseFilter.value;
                 const semesterValue = semesterFilter.value;
                 const statusValue = statusFilter.value;
 
                 document.querySelectorAll('#gradesTable tbody tr').forEach(row => {
-                    const msv = row.cells[1].textContent.toLowerCase();
+                    // Skip rows that are just "no data" messages
+                    if (row.cells.length <= 1) return;
+
+                    const msv = row.cells[1].textContent.trim();
                     const name = row.cells[2].textContent.toLowerCase();
-                    const courseCode = row.cells[3].textContent;
-                    const semester = row.cells[5].textContent;
+                    const courseCode = row.cells[3].textContent.trim();
+                    const semester = row.cells[5].textContent.trim();
                     const status = row.cells[9].textContent.toLowerCase().trim();
 
-                    const matchesSearch = msv.includes(searchValue) || name.includes(searchValue);
+                    // Search by name or student ID
+                    const matchesSearch = msv.toLowerCase().includes(searchValue) ||
+                        name.includes(searchValue);
+
+                    // Student filter - exact match on student ID
+                    const matchesStudent = studentValue === '' || msv === studentValue;
+
+                    // Course filter - exact match on course code
                     const matchesCourse = courseValue === '' || courseCode === courseValue;
+
+                    // Semester filter - exact match on semester number
                     const matchesSemester = semesterValue === '' || semester === semesterValue;
 
-                    // For status filter
+                    // Status filter
                     let matchesStatus = true;
                     if (statusValue === 'đạt') {
                         matchesStatus = status.includes('đạt');
@@ -491,11 +521,15 @@
                         matchesStatus = status.includes('học lại');
                     }
 
-                    row.style.display = (matchesSearch && matchesCourse && matchesSemester && matchesStatus) ? '' : 'none';
+                    // Show/hide row based on all filters
+                    const shouldShow = matchesSearch && matchesStudent && matchesCourse &&
+                        matchesSemester && matchesStatus;
+                    row.style.display = shouldShow ? '' : 'none';
                 });
             }
 
             searchInput.addEventListener('input', filterTable);
+            studentFilter.addEventListener('change', filterTable);
             courseFilter.addEventListener('change', filterTable);
             semesterFilter.addEventListener('change', filterTable);
             statusFilter.addEventListener('change', filterTable);
@@ -524,8 +558,8 @@
                 }
             }
 
-            diemQT.addEventListener('input', calculateFinalGrade);
             diemThi.addEventListener('input', calculateFinalGrade);
+            diemQT.addEventListener('input', calculateFinalGrade);
         });
     </script>
 </body>
