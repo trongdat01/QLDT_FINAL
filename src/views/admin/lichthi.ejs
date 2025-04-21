@@ -528,6 +528,38 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', function () {
+            // Format datetime values in the table to display in local time
+            document.querySelectorAll('#examSchedulesTable tbody tr').forEach(row => {
+                // Skip empty rows
+                if (row.cells.length <= 1) return;
+
+                // Get the date and time cells (assuming they're at position 5 and 6)
+                const dateCell = row.cells[5];
+                const timeCell = row.cells[6];
+
+                // If we have a valid timestamp, convert it to local time
+                if (timeCell && dateCell) {
+                    try {
+                        // Extract the original date and time from the table
+                        const originalDate = dateCell.textContent.trim();
+                        const originalTime = timeCell.textContent.trim();
+
+                        // Create a Date object, it will automatically be in local time
+                        const dateObj = new Date(`${originalDate} ${originalTime}`);
+                        if (!isNaN(dateObj.getTime())) {
+                            // Format the date and time in local timezone
+                            dateCell.textContent = dateObj.toLocaleDateString('vi-VN');
+                            timeCell.textContent = dateObj.toLocaleTimeString('vi-VN', {
+                                hour: '2-digit',
+                                minute: '2-digit'
+                            });
+                        }
+                    } catch (e) {
+                        console.error('Error formatting date:', e);
+                    }
+                }
+            });
+
             // Auto set day of week based on selected date
             document.getElementById('thoigianthi').addEventListener('change', function () {
                 if (this.value) {
@@ -564,7 +596,17 @@
                                 document.getElementById('edit_namhoc').value = exam.namhoc;
                                 document.getElementById('edit_kihoc').value = exam.kihoc;
                                 document.getElementById('edit_thu').value = exam.thu;
-                                document.getElementById('edit_thoigianthi').value = exam.formattedDateTime;
+
+                                // Adjust the datetime for local timezone display
+                                if (exam.formattedDateTime) {
+                                    document.getElementById('edit_thoigianthi').value = exam.formattedDateTime;
+                                } else if (exam.thoigianthi) {
+                                    // If formattedDateTime is not provided, create from thoigianthi
+                                    const dateObj = new Date(exam.thoigianthi);
+                                    const isoString = dateObj.toISOString().slice(0, 16);
+                                    document.getElementById('edit_thoigianthi').value = isoString;
+                                }
+
                                 document.getElementById('edit_phongthi').value = exam.phongthi;
                                 document.getElementById('edit_giangviencoithi').value = exam.giangviencoithi;
                                 document.getElementById('edit_hinhthuathi').value = exam.hinhthuathi;

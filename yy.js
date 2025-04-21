@@ -1,7 +1,7 @@
-// ==================== ROUTES QUẢN LÝ LỊCH THI ====================
+// ==================== ROUTES QUẢN LÝ TÀI CHÍNH ====================
 
-// Create lichthi table if it doesn't exist
-router.get('/admin/create-lichthi-table', async (req, res) => {
+// Create taichinh table if it doesn't exist (this might be redundant if you already have the table in your SQL file)
+router.get('/admin/create-taichinh-table', async (req, res) => {
     try {
         if (!req.session.user || req.session.user.vaitro !== 'admin') {
             return res.redirect('/taikhoan/dang-nhap?error=Vui lòng đăng nhập với tài khoản admin');
@@ -9,202 +9,209 @@ router.get('/admin/create-lichthi-table', async (req, res) => {
 
         // Check if table exists
         const tableCheck = await sequelize.query(
-            "SHOW TABLES LIKE 'lichthi'",
+            "SHOW TABLES LIKE 'taichinh'",
             { type: sequelize.QueryTypes.SELECT }
         );
 
         if (tableCheck && tableCheck.length > 0) {
-            return res.send('Bảng lichthi đã tồn tại. <a href="/taikhoan/admin/lichthi">Quay lại quản lý lịch thi</a>');
+            return res.send('Bảng taichinh đã tồn tại. <a href="/taikhoan/admin/taichinh">Quay lại quản lý tài chính</a>');
         }
 
         // Create the table with structure matching the SQL file
         await sequelize.query(`
-            CREATE TABLE lichthi (
+            CREATE TABLE taichinh (
                 id INT AUTO_INCREMENT PRIMARY KEY,
-                mahocphan VARCHAR(20) NOT NULL,
-                namhoc VARCHAR(20) NOT NULL,
-                kihoc VARCHAR(20) NOT NULL,
-                giangviencoithi VARCHAR(100) NOT NULL,
-                phongthi VARCHAR(50) NOT NULL,
-                thu VARCHAR(20) NOT NULL,
-                thoigianthi DATETIME NOT NULL,
-                hinhthuathi VARCHAR(50) NOT NULL,
-                trangthai ENUM('đã lên lịch', 'đã hoàn thành', 'hoãn thi') DEFAULT 'đã lên lịch',
+                msv VARCHAR(20) NOT NULL,
+                trangthai ENUM('đã hoàn thành', 'chưa hoàn thành') DEFAULT 'chưa hoàn thành',
+                khoanphainop DECIMAL(10, 2) NOT NULL,
+                khoandanop DECIMAL(10, 2) DEFAULT 0,
+                khoandocmien DECIMAL(10, 2) DEFAULT 0,
+                qr_nganhang VARCHAR(100),
+                qr_sotaikhoan VARCHAR(50),
+                qr_tennguoinhan VARCHAR(100),
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-                FOREIGN KEY (mahocphan) REFERENCES dangkyhocphan(mahocphan)
+                FOREIGN KEY (msv) REFERENCES sinhvien(msv)
             )
         `);
 
-        return res.send('Tạo bảng lichthi thành công. <a href="/taikhoan/admin/lichthi">Đến trang quản lý lịch thi</a>');
+        return res.send('Tạo bảng taichinh thành công. <a href="/taikhoan/admin/taichinh">Đến trang quản lý tài chính</a>');
     } catch (error) {
-        console.error('Lỗi tạo bảng lichthi:', error);
+        console.error('Lỗi tạo bảng taichinh:', error);
         return res.status(500).send('Lỗi: ' + error.message);
     }
 });
 
-// List all exam schedules - Admin view
-router.get('/admin/lichthi', async (req, res) => {
+// List all financial records - Admin view
+router.get('/admin/taichinh', async (req, res) => {
     try {
         if (!req.session.user || req.session.user.vaitro !== 'admin') {
             return res.redirect('/taikhoan/dang-nhap?error=Vui lòng đăng nhập với tài khoản admin');
         }
 
-        // Check if the lichthi table exists first
+        // Check if the taichinh table exists first
         const tableCheck = await sequelize.query(
-            "SHOW TABLES LIKE 'lichthi'",
+            "SHOW TABLES LIKE 'taichinh'",
             { type: sequelize.QueryTypes.SELECT }
         );
 
-        let examSchedules = [];
-        let courses = [];
-        let rooms = [];
+        let financialRecords = [];
+        let students = [];
 
         if (tableCheck && tableCheck.length > 0) {
             // Table exists, proceed with queries
             try {
-                // Fetch all exam schedules with course info
-                examSchedules = await sequelize.query(
-                    `SELECT l.*, c.tenhocphan 
-                     FROM lichthi l
-                     JOIN dangkyhocphan c ON l.mahocphan = c.mahocphan
-                     ORDER BY l.thoigianthi ASC`,
+                // Fetch all financial records with student info
+                financialRecords = await sequelize.query(
+                    `SELECT t.*, s.hovaten 
+                     FROM taichinh t
+                     JOIN sinhvien s ON t.msv = s.msv
+                     ORDER BY t.trangthai ASC, t.created_at DESC`,
                     {
                         type: sequelize.QueryTypes.SELECT
                     }
                 );
 
-                // Get unique exam rooms for filter dropdown
-                rooms = await sequelize.query(
-                    'SELECT DISTINCT phongthi FROM lichthi ORDER BY phongthi',
-                    {
-                        type: sequelize.QueryTypes.SELECT
-                    }
-                );
+                // Calculate remaining amount for each record
+                financialRecords.forEach(record => {
+                    record.conlai = parseFloat(record.khoanphainop) - parseFloat(record.khoandanop) - parseFloat(record.khoandocmien);
+                });
             } catch (queryError) {
                 console.error('Query error:', queryError);
                 // Continue with empty arrays
             }
         } else {
             // Table doesn't exist, we'll show a message in the UI
-            console.log('The lichthi table does not exist yet');
+            console.log('The taichinh table does not exist yet');
         }
 
-        // Fetch all courses for dropdown (this should work even if lichthi doesn't exist)
+        // Fetch all students for dropdown (this should work even if taichinh doesn't exist)
         try {
-            courses = await sequelize.query(
-                'SELECT mahocphan, tenhocphan FROM dangkyhocphan ORDER BY tenhocphan',
+            students = await sequelize.query(
+                'SELECT msv, hovaten FROM sinhvien ORDER BY hovaten',
                 {
                     type: sequelize.QueryTypes.SELECT
                 }
             );
-        } catch (courseError) {
-            console.error('Course query error:', courseError);
+        } catch (studentError) {
+            console.error('Student query error:', studentError);
             // Continue with empty array
         }
 
-        res.render('admin/lichthi', {
-            title: 'Quản lý Lịch Thi',
+        res.render('admin/taichinh', {
+            title: 'Quản lý Tài Chính',
             user: req.session.user,
-            examSchedules: examSchedules || [],
-            courses: courses || [],
-            rooms: rooms || [],
+            financialRecords: financialRecords || [],
+            students: students || [],
             tableExists: tableCheck && tableCheck.length > 0,
             error: req.query.error,
             success: req.query.success
         });
     } catch (error) {
-        console.error('Lỗi tải danh sách lịch thi:', error);
+        console.error('Lỗi tải danh sách tài chính:', error);
         res.status(500).render('error', {
-            message: 'Đã xảy ra lỗi khi tải danh sách lịch thi',
+            message: 'Đã xảy ra lỗi khi tải danh sách tài chính',
             error
         });
     }
 });
 
-// Add new exam schedule
-router.post('/admin/lichthi/them', async (req, res) => {
+// Add new financial record
+router.post('/admin/taichinh/them', async (req, res) => {
     try {
         if (!req.session.user || req.session.user.vaitro !== 'admin') {
             return res.redirect('/taikhoan/dang-nhap?error=Vui lòng đăng nhập với tài khoản admin');
         }
 
         const {
-            mahocphan,
-            namhoc,
-            kihoc,
-            thoigianthi,
-            giangviencoithi,
-            phongthi,
-            thu,
-            hinhthuathi,
+            msv,
+            khoanphainop,
+            khoandanop,
+            khoandocmien,
+            qr_nganhang,
+            qr_sotaikhoan,
+            qr_tennguoinhan,
             trangthai
         } = req.body;
 
         // Basic validation
-        if (!mahocphan || !namhoc || !kihoc || !thoigianthi || !giangviencoithi || !phongthi || !thu || !hinhthuathi) {
-            return res.redirect('/taikhoan/admin/lichthi?error=Vui lòng điền đầy đủ thông tin bắt buộc');
+        if (!msv || !khoanphainop) {
+            return res.redirect('/taikhoan/admin/taichinh?error=Vui lòng điền đầy đủ thông tin bắt buộc');
         }
 
-        // Format datetime
-        const examDateTime = new Date(thoigianthi);
-        if (isNaN(examDateTime.getTime())) {
-            return res.redirect('/taikhoan/admin/lichthi?error=Thời gian thi không hợp lệ');
+        if (isNaN(parseFloat(khoanphainop)) || parseFloat(khoanphainop) <= 0) {
+            return res.redirect('/taikhoan/admin/taichinh?error=Khoản phải nộp không hợp lệ');
         }
 
-        // Check for exam schedule conflicts in the same room
-        const conflicts = await sequelize.query(
-            `SELECT * FROM lichthi 
-             WHERE phongthi = ? 
-             AND DATE(thoigianthi) = DATE(?)
-             AND ABS(TIMESTAMPDIFF(HOUR, thoigianthi, ?)) < 4`,
+        // Check if the student exists
+        const student = await sequelize.query(
+            'SELECT * FROM sinhvien WHERE msv = ?',
             {
-                replacements: [
-                    phongthi,
-                    thoigianthi,
-                    thoigianthi
-                ],
+                replacements: [msv],
                 type: sequelize.QueryTypes.SELECT
             }
         );
 
-        if (conflicts && conflicts.length > 0) {
-            return res.redirect('/taikhoan/admin/lichthi?error=Phòng thi đã được sử dụng trong khoảng thời gian gần với lịch thi này');
+        if (!student || student.length === 0) {
+            return res.redirect('/taikhoan/admin/taichinh?error=Sinh viên không tồn tại');
         }
 
-        // Default trangthai if not specified
-        const examStatus = trangthai || 'đã lên lịch';
+        // Check if this student already has a financial record
+        const existingRecord = await sequelize.query(
+            'SELECT * FROM taichinh WHERE msv = ?',
+            {
+                replacements: [msv],
+                type: sequelize.QueryTypes.SELECT
+            }
+        );
 
-        // Insert new exam schedule
+        if (existingRecord && existingRecord.length > 0) {
+            return res.redirect('/taikhoan/admin/taichinh?error=Sinh viên này đã có thông tin tài chính, vui lòng cập nhật thay vì thêm mới');
+        }
+
+        // Parse and validate numeric values
+        const parsedKhoanPhaiNop = parseFloat(khoanphainop);
+        const parsedKhoanDaNop = khoandanop ? parseFloat(khoandanop) : 0;
+        const parsedKhoanDocMien = khoandocmien ? parseFloat(khoandocmien) : 0;
+
+        // Determine trangthai automatically based on payment status
+        let paymentStatus = 'chưa hoàn thành';
+        if (parsedKhoanDaNop + parsedKhoanDocMien >= parsedKhoanPhaiNop) {
+            paymentStatus = 'đã hoàn thành';
+        } else if (trangthai === 'đã hoàn thành') {
+            // If admin specifically selects "đã hoàn thành", honor that choice
+            paymentStatus = 'đã hoàn thành';
+        }
+
+        // Insert new financial record
         await sequelize.query(
-            `INSERT INTO lichthi 
-             (mahocphan, namhoc, kihoc, giangviencoithi, phongthi, thu, thoigianthi, hinhthuathi, trangthai) 
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            `INSERT INTO taichinh 
+             (msv, trangthai, khoanphainop, khoandanop, khoandocmien, qr_nganhang, qr_sotaikhoan, qr_tennguoinhan) 
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
             {
                 replacements: [
-                    mahocphan,
-                    namhoc,
-                    kihoc,
-                    giangviencoithi,
-                    phongthi,
-                    thu,
-                    thoigianthi,
-                    hinhthuathi,
-                    examStatus
+                    msv,
+                    paymentStatus,
+                    parsedKhoanPhaiNop,
+                    parsedKhoanDaNop,
+                    parsedKhoanDocMien,
+                    qr_nganhang || null,
+                    qr_sotaikhoan || null,
+                    qr_tennguoinhan || null
                 ],
                 type: sequelize.QueryTypes.INSERT
             }
         );
 
-        res.redirect('/taikhoan/admin/lichthi?success=Thêm lịch thi thành công');
+        res.redirect('/taikhoan/admin/taichinh?success=Thêm thông tin tài chính thành công');
     } catch (error) {
-        console.error('Lỗi thêm lịch thi:', error);
-        res.redirect('/taikhoan/admin/lichthi?error=Đã xảy ra lỗi: ' + error.message);
+        console.error('Lỗi thêm thông tin tài chính:', error);
+        res.redirect('/taikhoan/admin/taichinh?error=Đã xảy ra lỗi: ' + error.message);
     }
 });
 
-// Edit exam schedule
-router.post('/admin/lichthi/sua', async (req, res) => {
+// Edit financial record
+router.post('/admin/taichinh/sua', async (req, res) => {
     try {
         if (!req.session.user || req.session.user.vaitro !== 'admin') {
             return res.redirect('/taikhoan/dang-nhap?error=Vui lòng đăng nhập với tài khoản admin');
@@ -212,90 +219,74 @@ router.post('/admin/lichthi/sua', async (req, res) => {
 
         const {
             id,
-            mahocphan,
-            namhoc,
-            kihoc,
-            thoigianthi,
-            giangviencoithi,
-            phongthi,
-            thu,
-            hinhthuathi,
+            khoanphainop,
+            khoandanop,
+            khoandocmien,
+            qr_nganhang,
+            qr_sotaikhoan,
+            qr_tennguoinhan,
             trangthai
         } = req.body;
 
         // Basic validation
-        if (!id || !mahocphan || !namhoc || !kihoc || !thoigianthi || !giangviencoithi || !phongthi || !thu || !hinhthuathi) {
-            return res.redirect('/taikhoan/admin/lichthi?error=Vui lòng điền đầy đủ thông tin bắt buộc');
+        if (!id || !khoanphainop) {
+            return res.redirect('/taikhoan/admin/taichinh?error=Vui lòng điền đầy đủ thông tin bắt buộc');
         }
 
-        // Format datetime
-        const examDateTime = new Date(thoigianthi);
-        if (isNaN(examDateTime.getTime())) {
-            return res.redirect('/taikhoan/admin/lichthi?error=Thời gian thi không hợp lệ');
+        if (isNaN(parseFloat(khoanphainop)) || parseFloat(khoanphainop) <= 0) {
+            return res.redirect('/taikhoan/admin/taichinh?error=Khoản phải nộp không hợp lệ');
         }
 
-        // Check for exam schedule conflicts in the same room (excluding this schedule)
-        const conflicts = await sequelize.query(
-            `SELECT * FROM lichthi 
-             WHERE phongthi = ? 
-             AND DATE(thoigianthi) = DATE(?)
-             AND ABS(TIMESTAMPDIFF(HOUR, thoigianthi, ?)) < 4
-             AND id != ?`,
-            {
-                replacements: [
-                    phongthi,
-                    thoigianthi,
-                    thoigianthi,
-                    id
-                ],
-                type: sequelize.QueryTypes.SELECT
-            }
-        );
+        // Parse and validate numeric values
+        const parsedKhoanPhaiNop = parseFloat(khoanphainop);
+        const parsedKhoanDaNop = khoandanop ? parseFloat(khoandanop) : 0;
+        const parsedKhoanDocMien = khoandocmien ? parseFloat(khoandocmien) : 0;
 
-        if (conflicts && conflicts.length > 0) {
-            return res.redirect('/taikhoan/admin/lichthi?error=Phòng thi đã được sử dụng trong khoảng thời gian gần với lịch thi này');
+        // Determine trangthai automatically based on payment status
+        let paymentStatus = 'chưa hoàn thành';
+        if (parsedKhoanDaNop + parsedKhoanDocMien >= parsedKhoanPhaiNop) {
+            paymentStatus = 'đã hoàn thành';
+        } else if (trangthai === 'đã hoàn thành') {
+            // If admin specifically selects "đã hoàn thành", honor that choice
+            paymentStatus = 'đã hoàn thành';
         }
 
-        // Update exam schedule
+        // Update financial record
         await sequelize.query(
-            `UPDATE lichthi SET
-             mahocphan = ?,
-             namhoc = ?,
-             kihoc = ?,
-             giangviencoithi = ?,
-             phongthi = ?,
-             thu = ?,
-             thoigianthi = ?,
-             hinhthuathi = ?,
+            `UPDATE taichinh SET
              trangthai = ?,
+             khoanphainop = ?,
+             khoandanop = ?,
+             khoandocmien = ?,
+             qr_nganhang = ?,
+             qr_sotaikhoan = ?,
+             qr_tennguoinhan = ?,
              updated_at = CURRENT_TIMESTAMP
              WHERE id = ?`,
             {
                 replacements: [
-                    mahocphan,
-                    namhoc,
-                    kihoc,
-                    giangviencoithi,
-                    phongthi,
-                    thu,
-                    thoigianthi,
-                    hinhthuathi,
-                    trangthai,
+                    paymentStatus,
+                    parsedKhoanPhaiNop,
+                    parsedKhoanDaNop,
+                    parsedKhoanDocMien,
+                    qr_nganhang || null,
+                    qr_sotaikhoan || null,
+                    qr_tennguoinhan || null,
                     id
                 ],
                 type: sequelize.QueryTypes.UPDATE
             }
         );
 
-        res.redirect('/taikhoan/admin/lichthi?success=Cập nhật lịch thi thành công');
+        res.redirect('/taikhoan/admin/taichinh?success=Cập nhật thông tin tài chính thành công');
     } catch (error) {
-        console.error('Lỗi cập nhật lịch thi:', error);
-        res.redirect('/taikhoan/admin/lichthi?error=Đã xảy ra lỗi: ' + error.message);
+        console.error('Lỗi cập nhật thông tin tài chính:', error);
+        res.redirect('/taikhoan/admin/taichinh?error=Đã xảy ra lỗi: ' + error.message);
     }
 });
 
-// Delete exam schedule
-router.post('/admin/lichthi/xoa', async (req, res) => {
+// Delete financial record
+router.post('/admin/taichinh/xoa', async (req, res) => {
     try {
         if (!req.session.user || req.session.user.vaitro !== 'admin') {
             return res.redirect('/taikhoan/dang-nhap?error=Vui lòng đăng nhập với tài khoản admin');
@@ -304,27 +295,40 @@ router.post('/admin/lichthi/xoa', async (req, res) => {
         const { id } = req.body;
 
         if (!id) {
-            return res.redirect('/taikhoan/admin/lichthi?error=ID lịch thi không hợp lệ');
+            return res.redirect('/taikhoan/admin/taichinh?error=ID không hợp lệ');
         }
 
-        // Delete the exam schedule
+        // Check if there are any related payment receipts (phieuthu)
+        const receipts = await sequelize.query(
+            'SELECT * FROM phieuthu WHERE taichinh_id = ?',
+            {
+                replacements: [id],
+                type: sequelize.QueryTypes.SELECT
+            }
+        );
+
+        if (receipts && receipts.length > 0) {
+            return res.redirect('/taikhoan/admin/taichinh?error=Không thể xóa thông tin tài chính này vì đã có phiếu thu liên quan');
+        }
+
+        // Delete the financial record
         await sequelize.query(
-            'DELETE FROM lichthi WHERE id = ?',
+            'DELETE FROM taichinh WHERE id = ?',
             {
                 replacements: [id],
                 type: sequelize.QueryTypes.DELETE
             }
         );
 
-        res.redirect('/taikhoan/admin/lichthi?success=Xóa lịch thi thành công');
+        res.redirect('/taikhoan/admin/taichinh?success=Xóa thông tin tài chính thành công');
     } catch (error) {
-        console.error('Lỗi xóa lịch thi:', error);
-        res.redirect('/taikhoan/admin/lichthi?error=Đã xảy ra lỗi: ' + error.message);
+        console.error('Lỗi xóa thông tin tài chính:', error);
+        res.redirect('/taikhoan/admin/taichinh?error=Đã xảy ra lỗi: ' + error.message);
     }
 });
 
-// Get exam schedule details (JSON API)
-router.get('/admin/lichthi/chi-tiet/:id', async (req, res) => {
+// Get financial record details (JSON API)
+router.get('/admin/taichinh/chi-tiet/:id', async (req, res) => {
     try {
         if (!req.session.user || req.session.user.vaitro !== 'admin') {
             return res.status(401).json({ success: false, message: 'Unauthorized' });
@@ -332,121 +336,108 @@ router.get('/admin/lichthi/chi-tiet/:id', async (req, res) => {
 
         const { id } = req.params;
 
-        // Fetch exam schedule with course info
-        const examSchedules = await sequelize.query(
-            `SELECT l.*, c.tenhocphan 
-             FROM lichthi l
-             JOIN dangkyhocphan c ON l.mahocphan = c.mahocphan
-             WHERE l.id = ?`,
+        // Fetch financial record with student info
+        const financialRecords = await sequelize.query(
+            `SELECT t.*, s.hovaten 
+             FROM taichinh t
+             JOIN sinhvien s ON t.msv = s.msv
+             WHERE t.id = ?`,
             {
                 replacements: [id],
                 type: sequelize.QueryTypes.SELECT
             }
         );
 
-        if (!examSchedules || examSchedules.length === 0) {
-            return res.status(404).json({ success: false, message: 'Không tìm thấy lịch thi' });
+        if (!financialRecords || financialRecords.length === 0) {
+            return res.status(404).json({ success: false, message: 'Không tìm thấy thông tin tài chính' });
         }
 
-        // Format datetime for the response
-        const examSchedule = examSchedules[0];
-        if (examSchedule.thoigianthi) {
-            // Format ISO string to be compatible with datetime-local input
-            const date = new Date(examSchedule.thoigianthi);
-            examSchedule.formattedDateTime = date.toISOString().slice(0, 16);
-        }
+        const financialRecord = financialRecords[0];
 
-        res.json({ success: true, examSchedule });
+        // Calculate remaining amount
+        financialRecord.conlai = parseFloat(financialRecord.khoanphainop) -
+            parseFloat(financialRecord.khoandanop) -
+            parseFloat(financialRecord.khoandocmien);
+
+        res.json({ success: true, financialRecord });
     } catch (error) {
-        console.error('Lỗi lấy chi tiết lịch thi:', error);
+        console.error('Lỗi lấy chi tiết tài chính:', error);
         res.status(500).json({ success: false, message: 'Đã xảy ra lỗi', error: error.message });
     }
 });
 
-// Filter exam schedules
-router.get('/admin/lichthi/loc', async (req, res) => {
+// Filter financial records
+router.get('/admin/taichinh/loc', async (req, res) => {
     try {
         if (!req.session.user || req.session.user.vaitro !== 'admin') {
             return res.redirect('/taikhoan/dang-nhap?error=Vui lòng đăng nhập với tài khoản admin');
         }
 
-        const { mahocphan, ngaythi, phongthi, trangthai } = req.query;
+        const { msv, trangthai } = req.query;
 
         // Build WHERE clause based on filters
         let whereClause = '';
         const replacements = [];
 
-        if (mahocphan) {
-            whereClause += ' AND l.mahocphan = ?';
-            replacements.push(mahocphan);
-        }
-
-        if (ngaythi) {
-            whereClause += ' AND DATE(l.thoigianthi) = ?';
-            replacements.push(ngaythi);
-        }
-
-        if (phongthi) {
-            whereClause += ' AND l.phongthi = ?';
-            replacements.push(phongthi);
+        if (msv) {
+            whereClause += ' AND t.msv = ?';
+            replacements.push(msv);
         }
 
         if (trangthai) {
-            whereClause += ' AND l.trangthai = ?';
+            whereClause += ' AND t.trangthai = ?';
             replacements.push(trangthai);
         }
 
-        // Fetch filtered exam schedules
-        const examSchedules = await sequelize.query(
-            `SELECT l.*, c.tenhocphan 
-             FROM lichthi l
-             JOIN dangkyhocphan c ON l.mahocphan = c.mahocphan
+        // Fetch filtered financial records
+        const financialRecords = await sequelize.query(
+            `SELECT t.*, s.hovaten 
+             FROM taichinh t
+             JOIN sinhvien s ON t.msv = s.msv
              WHERE 1=1 ${whereClause}
-             ORDER BY l.thoigianthi ASC`,
+             ORDER BY t.trangthai ASC, t.created_at DESC`,
             {
                 replacements,
                 type: sequelize.QueryTypes.SELECT
             }
         );
 
-        // Fetch all courses for dropdown
-        const courses = await sequelize.query(
-            'SELECT mahocphan, tenhocphan FROM dangkyhocphan ORDER BY tenhocphan',
+        // Calculate remaining amount for each record
+        financialRecords.forEach(record => {
+            record.conlai = parseFloat(record.khoanphainop) - parseFloat(record.khoandanop) - parseFloat(record.khoandocmien);
+        });
+
+        // Fetch all students for dropdown
+        const students = await sequelize.query(
+            'SELECT msv, hovaten FROM sinhvien ORDER BY hovaten',
             {
                 type: sequelize.QueryTypes.SELECT
             }
         );
 
-        // Get unique rooms for filter dropdown
-        const rooms = await sequelize.query(
-            'SELECT DISTINCT phongthi FROM lichthi ORDER BY phongthi',
-            {
-                type: sequelize.QueryTypes.SELECT
-            }
-        );
-
-        res.render('admin/lichthi', {
-            title: 'Quản lý Lịch Thi - Kết quả lọc',
+        res.render('admin/taichinh', {
+            title: 'Quản lý Tài Chính - Kết quả lọc',
             user: req.session.user,
-            examSchedules: examSchedules || [],
-            courses: courses || [],
-            rooms: rooms || [],
-            filters: { mahocphan, ngaythi, phongthi, trangthai },
+            financialRecords: financialRecords || [],
+            students: students || [],
+            filters: { msv, trangthai },
             tableExists: true,
             error: req.query.error,
             success: req.query.success
         });
     } catch (error) {
-        console.error('Lỗi lọc lịch thi:', error);
+        console.error('Lỗi lọc tài chính:', error);
         res.status(500).render('error', {
-            message: 'Đã xảy ra lỗi khi lọc danh sách lịch thi',
+            message: 'Đã xảy ra lỗi khi lọc danh sách tài chính',
             error
         });
     }
 });
 
-// View student's exam schedules
-router.get('/sinhvien/lichthi', async (req, res) => {
+// ============= STUDENT FINANCIAL MANAGEMENT =============
+
+// View student's financial information
+router.get('/sinhvien/taichinh', async (req, res) => {
     try {
         if (!req.session.user || req.session.user.vaitro !== 'sinhvien') {
             return res.redirect('/taikhoan/dang-nhap?error=Vui lòng đăng nhập với tài khoản sinh viên');
@@ -454,63 +445,506 @@ router.get('/sinhvien/lichthi', async (req, res) => {
 
         const msv = req.session.user.id;
 
-        // Get student's registered courses with 'đã đăng ký' status
-        const registeredCourses = await sequelize.query(
-            `SELECT d.mahocphan, c.tenhocphan 
-             FROM dsdangkyhocphan d
-             JOIN dangkyhocphan c ON d.mahocphan = c.mahocphan
-             WHERE d.msv = ? AND d.trangthaidangky = 'đã đăng ký'`,
+        // Get student's financial information
+        const financialRecords = await sequelize.query(
+            `SELECT t.* 
+             FROM taichinh t
+             WHERE t.msv = ?`,
             {
                 replacements: [msv],
                 type: sequelize.QueryTypes.SELECT
             }
         );
 
-        if (!registeredCourses || registeredCourses.length === 0) {
-            return res.render('sinhvien/lichthi', {
-                title: 'Lịch Thi Của Tôi',
-                user: req.session.user,
-                examSchedules: [],
-                message: 'Bạn chưa đăng ký học phần nào hoặc các học phần đăng ký chưa được phê duyệt.'
-            });
+        let financialRecord = null;
+        if (financialRecords && financialRecords.length > 0) {
+            financialRecord = financialRecords[0];
+
+            // Calculate remaining amount
+            financialRecord.conlai = parseFloat(financialRecord.khoanphainop) -
+                parseFloat(financialRecord.khoandanop) -
+                parseFloat(financialRecord.khoandocmien);
+
+            // Get payment receipts
+            const receipts = await sequelize.query(
+                `SELECT * 
+                 FROM phieuthu
+                 WHERE taichinh_id = ?
+                 ORDER BY thoigian DESC`,
+                {
+                    replacements: [financialRecord.id],
+                    type: sequelize.QueryTypes.SELECT
+                }
+            );
+
+            financialRecord.receipts = receipts || [];
         }
 
-        // Get the list of course IDs
-        const courseIds = registeredCourses.map(course => course.mahocphan);
-
-        // Get exam schedules for these courses
-        const examSchedules = await sequelize.query(
-            `SELECT l.*, c.tenhocphan 
-             FROM lichthi l
-             JOIN dangkyhocphan c ON l.mahocphan = c.mahocphan
-             WHERE l.mahocphan IN (?)
-             ORDER BY l.thoigianthi ASC`,
-            {
-                replacements: [courseIds],
-                type: sequelize.QueryTypes.SELECT
-            }
-        );
-
-        // Format dates for display
-        examSchedules.forEach(schedule => {
-            if (schedule.thoigianthi) {
-                const date = new Date(schedule.thoigianthi);
-                schedule.formattedDate = date.toLocaleDateString('vi-VN');
-                schedule.formattedTime = date.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
-            }
-        });
-
-        res.render('sinhvien/lichthi', {
-            title: 'Lịch Thi Của Tôi',
+        res.render('sinhvien/taichinh', {
+            title: 'Thông Tin Tài Chính',
             user: req.session.user,
-            examSchedules: examSchedules || [],
-            courses: registeredCourses || []
+            financialRecord: financialRecord,
+            error: req.query.error,
+            success: req.query.success
         });
     } catch (error) {
-        console.error('Lỗi tải lịch thi sinh viên:', error);
+        console.error('Lỗi tải thông tin tài chính sinh viên:', error);
         res.status(500).render('error', {
-            message: 'Đã xảy ra lỗi khi tải lịch thi của bạn',
+            message: 'Đã xảy ra lỗi khi tải thông tin tài chính của bạn',
             error
         });
     }
 });
+
+// ============= PAYMENT RECEIPT MANAGEMENT =============
+
+// Create phieuthu table if it doesn't exist
+router.get('/admin/create-phieuthu-table', async (req, res) => {
+    try {
+        if (!req.session.user || req.session.user.vaitro !== 'admin') {
+            return res.redirect('/taikhoan/dang-nhap?error=Vui lòng đăng nhập với tài khoản admin');
+        }
+
+        // Check if table exists
+        const tableCheck = await sequelize.query(
+            "SHOW TABLES LIKE 'phieuthu'",
+            { type: sequelize.QueryTypes.SELECT }
+        );
+
+        if (tableCheck && tableCheck.length > 0) {
+            return res.send('Bảng phieuthu đã tồn tại. <a href="/taikhoan/admin/taichinh">Quay lại quản lý tài chính</a>');
+        }
+
+        // Create the table with structure matching the SQL file
+        await sequelize.query(`
+            CREATE TABLE phieuthu (
+                id VARCHAR(50) PRIMARY KEY,
+                taichinh_id INT NOT NULL,
+                tiendathu DECIMAL(10, 2) NOT NULL,
+                thoigian DATETIME DEFAULT CURRENT_TIMESTAMP,
+                nganhangchuyen VARCHAR(100),
+                nganhangnhan VARCHAR(100),
+                nguoilaphieu VARCHAR(100) NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                FOREIGN KEY (taichinh_id) REFERENCES taichinh(id)
+            )
+        `);
+
+        return res.send('Tạo bảng phieuthu thành công. <a href="/taikhoan/admin/taichinh">Đến trang quản lý tài chính</a>');
+    } catch (error) {
+        console.error('Lỗi tạo bảng phieuthu:', error);
+        return res.status(500).send('Lỗi: ' + error.message);
+    }
+});
+
+// Add new payment receipt
+router.post('/admin/phieuthu/them', async (req, res) => {
+    try {
+        if (!req.session.user || req.session.user.vaitro !== 'admin') {
+            return res.redirect('/taikhoan/dang-nhap?error=Vui lòng đăng nhập với tài khoản admin');
+        }
+
+        const {
+            taichinh_id,
+            tiendathu,
+            thoigian,
+            nganhangchuyen,
+            nganhangnhan
+        } = req.body;
+
+        // Basic validation
+        if (!taichinh_id || !tiendathu) {
+            return res.redirect('/taikhoan/admin/taichinh?error=Vui lòng điền đầy đủ thông tin bắt buộc');
+        }
+
+        if (isNaN(parseFloat(tiendathu)) || parseFloat(tiendathu) <= 0) {
+            return res.redirect('/taikhoan/admin/taichinh?error=Số tiền không hợp lệ');
+        }
+
+        // Check if financial record exists
+        const financialRecords = await sequelize.query(
+            'SELECT * FROM taichinh WHERE id = ?',
+            {
+                replacements: [taichinh_id],
+                type: sequelize.QueryTypes.SELECT
+            }
+        );
+
+        if (!financialRecords || financialRecords.length === 0) {
+            return res.redirect('/taikhoan/admin/taichinh?error=Thông tin tài chính không tồn tại');
+        }
+
+        const financialRecord = financialRecords[0];
+
+        // Generate a unique receipt ID (format: PT-yyyyMMdd-xxxx)
+        const now = new Date();
+        const datePart = now.toISOString().slice(0, 10).replace(/-/g, '');
+        const randomPart = Math.floor(1000 + Math.random() * 9000); // 4-digit random number
+        const receiptId = `PT-${datePart}-${randomPart}`;
+
+        // Parse amount
+        const parsedAmount = parseFloat(tiendathu);
+
+        // Use current timestamp if no time provided
+        const paymentTime = thoigian ? new Date(thoigian) : now;
+
+        // Insert new payment receipt
+        await sequelize.query(
+            `INSERT INTO phieuthu 
+             (id, taichinh_id, tiendathu, thoigian, nganhangchuyen, nganhangnhan, nguoilaphieu) 
+             VALUES (?, ?, ?, ?, ?, ?, ?)`,
+            {
+                replacements: [
+                    receiptId,
+                    taichinh_id,
+                    parsedAmount,
+                    paymentTime,
+                    nganhangchuyen || null,
+                    nganhangnhan || null,
+                    req.session.user.email // Current admin user
+                ],
+                type: sequelize.QueryTypes.INSERT
+            }
+        );
+
+        // Update the financial record's paid amount
+        const newPaidAmount = parseFloat(financialRecord.khoandanop) + parsedAmount;
+
+        // Determine new status
+        let newStatus = 'chưa hoàn thành';
+        if (newPaidAmount + parseFloat(financialRecord.khoandocmien) >= parseFloat(financialRecord.khoanphainop)) {
+            newStatus = 'đã hoàn thành';
+        }
+
+        // Update the financial record
+        await sequelize.query(
+            `UPDATE taichinh SET
+             khoandanop = ?,
+             trangthai = ?,
+             updated_at = CURRENT_TIMESTAMP
+             WHERE id = ?`,
+            {
+                replacements: [
+                    newPaidAmount,
+                    newStatus,
+                    taichinh_id
+                ],
+                type: sequelize.QueryTypes.UPDATE
+            }
+        );
+
+        res.redirect('/taikhoan/admin/taichinh?success=Thêm phiếu thu thành công');
+    } catch (error) {
+        console.error('Lỗi thêm phiếu thu:', error);
+        res.redirect('/taikhoan/admin/taichinh?error=Đã xảy ra lỗi: ' + error.message);
+    }
+});
+
+// View all payment receipts for a financial record
+router.get('/admin/phieuthu/:taichinh_id', async (req, res) => {
+    try {
+        if (!req.session.user || req.session.user.vaitro !== 'admin') {
+            return res.redirect('/taikhoan/dang-nhap?error=Vui lòng đăng nhập với tài khoản admin');
+        }
+
+        const { taichinh_id } = req.params;
+
+        // Get financial record
+        const financialRecords = await sequelize.query(
+            `SELECT t.*, s.hovaten, s.msv 
+             FROM taichinh t
+             JOIN sinhvien s ON t.msv = s.msv
+             WHERE t.id = ?`,
+            {
+                replacements: [taichinh_id],
+                type: sequelize.QueryTypes.SELECT
+            }
+        );
+
+        if (!financialRecords || financialRecords.length === 0) {
+            return res.redirect('/taikhoan/admin/taichinh?error=Thông tin tài chính không tồn tại');
+        }
+
+        const financialRecord = financialRecords[0];
+
+        // Calculate remaining amount
+        financialRecord.conlai = parseFloat(financialRecord.khoanphainop) -
+            parseFloat(financialRecord.khoandanop) -
+            parseFloat(financialRecord.khoandocmien);
+
+        // Get payment receipts
+        const receipts = await sequelize.query(
+            `SELECT * 
+             FROM phieuthu
+             WHERE taichinh_id = ?
+             ORDER BY thoigian DESC`,
+            {
+                replacements: [taichinh_id],
+                type: sequelize.QueryTypes.SELECT
+            }
+        );
+
+        res.render('admin/phieuthu', {
+            title: 'Quản lý Phiếu Thu',
+            user: req.session.user,
+            financialRecord,
+            receipts: receipts || [],
+            error: req.query.error,
+            success: req.query.success
+        });
+    } catch (error) {
+        console.error('Lỗi tải danh sách phiếu thu:', error);
+        res.status(500).render('error', {
+            message: 'Đã xảy ra lỗi khi tải danh sách phiếu thu',
+            error
+        });
+    }
+});
+
+// Delete payment receipt
+router.post('/admin/phieuthu/xoa', async (req, res) => {
+    try {
+        if (!req.session.user || req.session.user.vaitro !== 'admin') {
+            return res.redirect('/taikhoan/dang-nhap?error=Vui lòng đăng nhập với tài khoản admin');
+        }
+
+        const { receiptId, taichinh_id } = req.body;
+
+        if (!receiptId || !taichinh_id) {
+            return res.redirect(`/taikhoan/admin/phieuthu/${taichinh_id}?error=ID phiếu thu không hợp lệ`);
+        }
+
+        // Get receipt info first to know the amount
+        const receipts = await sequelize.query(
+            'SELECT * FROM phieuthu WHERE id = ?',
+            {
+                replacements: [receiptId],
+                type: sequelize.QueryTypes.SELECT
+            }
+        );
+
+        if (!receipts || receipts.length === 0) {
+            return res.redirect(`/taikhoan/admin/phieuthu/${taichinh_id}?error=Phiếu thu không tồn tại`);
+        }
+
+        const receipt = receipts[0];
+        const receiptAmount = parseFloat(receipt.tiendathu);
+
+        // Begin a transaction
+        const transaction = await sequelize.transaction();
+
+        try {
+            // Delete the receipt
+            await sequelize.query(
+                'DELETE FROM phieuthu WHERE id = ?',
+                {
+                    replacements: [receiptId],
+                    type: sequelize.QueryTypes.DELETE,
+                    transaction
+                }
+            );
+
+            // Get current financial record
+            const financialRecords = await sequelize.query(
+                'SELECT * FROM taichinh WHERE id = ?',
+                {
+                    replacements: [taichinh_id],
+                    type: sequelize.QueryTypes.SELECT,
+                    transaction
+                }
+            );
+
+            if (!financialRecords || financialRecords.length === 0) {
+                throw new Error('Thông tin tài chính không tồn tại');
+            }
+
+            const financialRecord = financialRecords[0];
+
+            // Update the financial record's paid amount
+            const newPaidAmount = Math.max(0, parseFloat(financialRecord.khoandanop) - receiptAmount);
+
+            // Determine new status
+            let newStatus = 'chưa hoàn thành';
+            if (newPaidAmount + parseFloat(financialRecord.khoandocmien) >= parseFloat(financialRecord.khoanphainop)) {
+                newStatus = 'đã hoàn thành';
+            }
+
+            // Update the financial record
+            await sequelize.query(
+                `UPDATE taichinh SET
+                 khoandanop = ?,
+                 trangthai = ?,
+                 updated_at = CURRENT_TIMESTAMP
+                 WHERE id = ?`,
+                {
+                    replacements: [
+                        newPaidAmount,
+                        newStatus,
+                        taichinh_id
+                    ],
+                    type: sequelize.QueryTypes.UPDATE,
+                    transaction
+                }
+            );
+
+            // Commit the transaction
+            await transaction.commit();
+
+            res.redirect(`/taikhoan/admin/phieuthu/${taichinh_id}?success=Xóa phiếu thu thành công`);
+        } catch (error) {
+            // Rollback the transaction in case of error
+            await transaction.rollback();
+            throw error;
+        }
+    } catch (error) {
+        console.error('Lỗi xóa phiếu thu:', error);
+        res.redirect(`/taikhoan/admin/phieuthu/${req.body.taichinh_id}?error=Đã xảy ra lỗi: ${error.message}`);
+    }
+});
+
+// Print payment receipt
+router.get('/admin/phieuthu/in/:receiptId', async (req, res) => {
+    try {
+        if (!req.session.user || req.session.user.vaitro !== 'admin') {
+            return res.redirect('/taikhoan/dang-nhap?error=Vui lòng đăng nhập với tài khoản admin');
+        }
+
+        const { receiptId } = req.params;
+
+        // Get receipt with related financial and student info
+        const receipts = await sequelize.query(
+            `SELECT p.*, t.msv, s.hovaten, s.khoa, s.nienkhoa
+             FROM phieuthu p
+             JOIN taichinh t ON p.taichinh_id = t.id
+             JOIN sinhvien s ON t.msv = s.msv
+             WHERE p.id = ?`,
+            {
+                replacements: [receiptId],
+                type: sequelize.QueryTypes.SELECT
+            }
+        );
+
+        if (!receipts || receipts.length === 0) {
+            return res.status(404).render('error', {
+                message: 'Không tìm thấy phiếu thu',
+                error: { status: 404 }
+            });
+        }
+
+        const receipt = receipts[0];
+
+        // Format date for display
+        receipt.formattedDate = new Date(receipt.thoigian).toLocaleDateString('vi-VN');
+        receipt.formattedTime = new Date(receipt.thoigian).toLocaleTimeString('vi-VN');
+
+        // Format amount in words (you might want to implement this function)
+        receipt.amountInWords = numberToWords(receipt.tiendathu);
+
+        res.render('admin/phieuthu-print', {
+            title: `Phiếu Thu - ${receiptId}`,
+            receipt,
+            user: req.session.user
+        });
+    } catch (error) {
+        console.error('Lỗi tải phiếu thu để in:', error);
+        res.status(500).render('error', {
+            message: 'Đã xảy ra lỗi khi tải phiếu thu để in',
+            error
+        });
+    }
+});
+
+// Helper function to convert number to Vietnamese words
+function numberToWords(num) {
+    if (num === 0) return "không đồng";
+
+    const units = ["", "một", "hai", "ba", "bốn", "năm", "sáu", "bảy", "tám", "chín"];
+    const tens = ["", "mười", "hai mươi", "ba mươi", "bốn mươi", "năm mươi", "sáu mươi", "bảy mươi", "tám mươi", "chín mươi"];
+    const scales = ["", "nghìn", "triệu", "tỷ", "nghìn tỷ", "triệu tỷ"];
+
+    // Format the number with 2 decimal places and convert to string
+    const numStr = num.toFixed(2);
+
+    // Split into integer and decimal parts
+    const parts = numStr.split('.');
+    const integerPart = parseInt(parts[0]);
+    const decimalPart = parseInt(parts[1]);
+
+    function convertGroup(n) {
+        let result = "";
+
+        const hundreds = Math.floor(n / 100);
+        const tensUnits = n % 100;
+
+        if (hundreds > 0) {
+            result += units[hundreds] + " trăm ";
+            if (tensUnits > 0 && tensUnits < 10) {
+                result += "lẻ ";
+            }
+        }
+
+        if (tensUnits > 0) {
+            if (tensUnits < 10) {
+                result += units[tensUnits];
+            } else {
+                const ten = Math.floor(tensUnits / 10);
+                const unit = tensUnits % 10;
+
+                if (ten > 1) {
+                    result += tens[ten] + " ";
+                    if (unit === 1) {
+                        result += "mốt";
+                    } else if (unit === 5) {
+                        result += "lăm";
+                    } else if (unit > 0) {
+                        result += units[unit];
+                    }
+                } else { // ten === 1
+                    result += "mười ";
+                    if (unit === 1) {
+                        result += "một";
+                    } else if (unit === 5) {
+                        result += "lăm";
+                    } else if (unit > 0) {
+                        result += units[unit];
+                    }
+                }
+            }
+        }
+
+        return result.trim();
+    }
+
+    function convertNumber(n) {
+        if (n === 0) return "không";
+
+        let result = "";
+        let groupIndex = 0;
+
+        while (n > 0) {
+            const group = n % 1000;
+            if (group > 0) {
+                const groupText = convertGroup(group);
+                if (groupIndex > 0 && groupText) {
+                    result = groupText + " " + scales[groupIndex] + " " + result;
+                } else if (groupText) {
+                    result = groupText + result;
+                }
+            }
+
+            n = Math.floor(n / 1000);
+            groupIndex++;
+        }
+
+        return result.trim();
+    }
+
+    let result = convertNumber(integerPart) + " đồng";
+
+    if (decimalPart > 0) {
+        result += " và " + convertNumber(decimalPart) + " xu";
+    }
+
+    return result;
+}
